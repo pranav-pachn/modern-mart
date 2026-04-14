@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="480" viewBox="0 0 800 480" role="img" aria-labelledby="title desc">
+  <title id="title">Product image placeholder</title>
+  <desc id="desc">A neutral placeholder image used when product photos are unavailable.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#e5f7ef" />
+      <stop offset="100%" stop-color="#f3f4f6" />
+    </linearGradient>
+  </defs>
+  <rect width="800" height="480" fill="url(#bg)" />
+  <g fill="none" stroke="#10b981" stroke-width="12" opacity="0.9">
+    <rect x="236" y="130" width="328" height="220" rx="28" />
+    <path d="M300 292l58-62 54 50 42-38 46 50" />
+    <circle cx="492" cy="196" r="24" />
+  </g>
+  <text x="400" y="390" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="28" fill="#065f46">
+    Image unavailable
+  </text>
+</svg>
