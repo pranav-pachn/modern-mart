@@ -54,9 +54,16 @@ function addProduct(cart: CartItem[], product: CartProduct) {
   const existingItem = cart.find((item) => item.id === product.id);
 
   if (existingItem) {
+    if (product.stock !== undefined && existingItem.quantity >= product.stock) {
+      return cart; // Reject if stock exceeded
+    }
     return cart.map((item) =>
       item.id === product.id ? { ...item, ...product, quantity: item.quantity + 1 } : item,
     );
+  }
+
+  if (product.stock !== undefined && product.stock < 1) {
+    return cart; // Reject if out of stock
   }
 
   return [
@@ -85,7 +92,9 @@ export const useCart = create<CartState>()(
         set((state) =>
           withTotals(
             state.cart.map((item) =>
-              item.id === id ? { ...item, quantity: item.quantity + 1 } : item,
+              item.id === id 
+                ? { ...item, quantity: item.stock !== undefined && item.quantity >= item.stock ? item.quantity : item.quantity + 1 } 
+                : item,
             ),
           ),
         ),
@@ -93,7 +102,9 @@ export const useCart = create<CartState>()(
         set((state) =>
           withTotals(
             state.cart.map((item) =>
-              item.id === id ? { ...item, quantity: item.quantity + 1 } : item,
+              item.id === id 
+                ? { ...item, quantity: item.stock !== undefined && item.quantity >= item.stock ? item.quantity : item.quantity + 1 } 
+                : item,
             ),
           ),
         ),

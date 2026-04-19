@@ -1,6 +1,9 @@
 import { useCart } from "@/store/cart";
+import Link from "next/link";
 
 type ProductLike = {
+  _id?: string;
+  id?: string;
   name: string;
   price: number;
   category?: string;
@@ -34,60 +37,54 @@ export default function ProductCard({
   const { addToCart } = useCart();
   const imageSrc = resolveImageSrc(product.image);
   const isAdded = actionLabel.toLowerCase() === "added";
+  
+  const productId = product._id || product.id || "";
 
-  const handleAddClick = () => {
+  const handleAddClick = (e: React.MouseEvent) => {
+    e.preventDefault();
     if (onAddToCart) {
       onAddToCart();
       return;
     }
 
-    addToCart(product);
+    addToCart(product as any);
   };
 
   return (
-    <div className="relative rounded-lg border border-zinc-200 bg-white p-4 shadow-sm transition hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900">
-      <div
-        className={`mb-3 flex h-8 items-center rounded-full border px-2 transition ${
-          isAdded
-            ? "border-emerald-300 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950/40"
-            : "border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800"
-        }`}
-        aria-live="polite"
-      >
-        <span className="inline-flex w-10 rounded-full bg-white/80 p-1 dark:bg-zinc-900/80">
-          <span
-            className={`h-3 w-3 rounded-full transition-transform ${
-              isAdded ? "translate-x-5 bg-emerald-600" : "translate-x-0 bg-zinc-400"
+    <div className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-gray-200 bg-white transition-all duration-200 hover:-translate-y-1 hover:border-emerald-200 hover:shadow-lg">
+      <Link href={productId ? `/product/${productId}` : "#"} className="aspect-square w-full overflow-hidden bg-gray-50 relative block">
+        <img src={imageSrc} alt={product.name} loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+      </Link>
+
+      <div className="flex flex-1 flex-col p-5">
+        <div className="mb-4">
+          {product.category && (
+            <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-emerald-600">
+              {product.category}
+            </span>
+          )}
+          <Link href={productId ? `/product/${productId}` : "#"}>
+            <h3 className="line-clamp-2 font-bold text-gray-900 text-base leading-tight hover:text-emerald-600 transition">
+              {product.name}
+            </h3>
+          </Link>
+        </div>
+
+        <div className="mt-auto flex items-center justify-between gap-3">
+          <p className="text-lg font-black text-gray-900">₹{product.price}</p>
+          <button
+            type="button"
+            onClick={handleAddClick}
+            className={`flex items-center justify-center rounded-xl px-4 py-2 text-sm font-bold transition-all ${
+              isAdded
+                ? "bg-emerald-50 text-emerald-700 pointer-events-none"
+                : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm"
             }`}
-          />
-        </span>
-        <span
-          className={`ml-2 text-xs font-semibold ${
-            isAdded ? "text-emerald-700 dark:text-emerald-300" : "text-zinc-600 dark:text-zinc-300"
-          }`}
-        >
-          {isAdded ? "Added to cart" : "Not in cart"}
-        </span>
+          >
+            {isAdded ? "Added ✓" : "Add"}
+          </button>
+        </div>
       </div>
-
-      <img src={imageSrc} alt={product.name} className="h-32 w-full object-cover" />
-
-      {product.category ? (
-        <p className="mt-3 inline-block rounded-full bg-zinc-100 px-2 py-1 text-xs font-semibold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
-          {product.category}
-        </p>
-      ) : null}
-
-      <h3>{product.name}</h3>
-      <p>₹{product.price}</p>
-
-      <button
-        type="button"
-        onClick={handleAddClick}
-        className="mt-2 cursor-pointer rounded bg-green-600 px-3 py-1 text-white"
-      >
-        {actionLabel}
-      </button>
     </div>
   );
 }

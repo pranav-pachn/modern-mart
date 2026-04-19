@@ -1,18 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ObjectId } from "mongodb";
+import crypto from "crypto";
 import clientPromise from "@/lib/mongodb";
 import { ORDERS_COLLECTION, type OrderDocument, type OrderItem } from "@/models/Order";
+import { PRODUCTS_COLLECTION, type ProductDocument } from "@/models/Product";
+import { z } from "zod";
 
 export const runtime = "nodejs";
-
-type OrderRequestBody = {
-  userName?: unknown;
-  phone?: unknown;
-  address?: unknown;
-  items?: unknown;
-  total?: unknown;
-  paymentMethod?: unknown;
-  paymentId?: unknown;
-};
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -27,55 +21,82 @@ export async function OPTIONS() {
   });
 }
 
+const orderItemSchema = z.object({
+  productId: z.string().min(1),
+  name: z.string().min(1),
+  price: z.number().nonnegative(),
+  quantity: z.number().int().positive(),
+});
+
+const orderSchema = z.object({
+  userName: z.string().min(1, "Name is required"),
+  phone: z.string().min(1, "Phone is required"),
+  address: z.string().min(1, "Address is required"),
+  items: z.array(orderItemSchema).min(1, "At least one item is required"),
+  total: z.number().nonnegative("Total is required"),
+  paymentMethod: z.enum(["COD", "ONLINE"]).default("COD"),
+  paymentId: z.string().optional(),
+  razorpay_order_id: z.string().optional(),
+  razorpay_payment_id: z.string().optional(),
+  razorpay_signature: z.string().optional(),
+});
+
 export async function POST(request: NextRequest) {
   try {
-    const body = (await request.json()) as OrderRequestBody;
-    const userName = readRequiredString(body.userName);
-    const phone = readRequiredString(body.phone);
-    const address = readRequiredString(body.address);
-    const items = readOrderItems(body.items);
-    const total = readNonNegativeNumber(body.total);
+    const rawBody = await request.json();
+    const parsed = orderSchema.safeParse(rawBody);
 
-    const paymentMethod = (readRequiredString(body.paymentMethod) || "COD").toUpperCase();
-    const validationErrors: string[] = [];
-
-    if (!userName) {
-      validationErrors.push("userName");
-    }
-
-    if (!phone) {
-      validationErrors.push("phone");
-    }
-
-    if (!address) {
-      validationErrors.push("address");
-    }
-
-    if (items.length === 0) {
-      validationErrors.push("items");
-    }
-
-    if (total === null) {
-      validationErrors.push("total");
-    }
-
-    if (validationErrors.length > 0) {
+    if (!parsed.success) {
       return jsonWithCors(
         {
-          error: "Name, phone, address, total, and at least one order item are required.",
-          fields: validationErrors,
+          error: "Validation failed",
+          fields: parsed.error.issues.map((e: any) => `${e.path.join(".")}: ${e.message}`),
         },
-        400,
+        400
       );
     }
 
-    if (!["COD", "ONLINE"].includes(paymentMethod)) {
-      return jsonWithCors(
-        {
-          error: "Invalid payment method.",
-        },
-        400,
+    const {
+      userName,
+      phone,
+      address,
+      items,
+      total,
+      paymentMethod,
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+    } = parsed.data;
+
+    let paymentStatus = "pending";
+    let finalPaymentId = parsed.data.paymentId;
+
+    if (paymentMethod === "ONLINE") {
+      if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+        return jsonWithCors({ error: "Missing Razorpay payment verification details." }, 400);
+      }
+
+      const secret = process.env.RAZORPAY_KEY_SECRET;
+      if (!secret) {
+        return jsonWithCors({ error: "Server missing Razorpay secret" }, 500);
+      }
+
+      const expectedSignature = crypto
+        .createHmac("sha256", secret)
+        .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+        .digest("hex");
+
+      const isValid = crypto.timingSafeEqual(
+        Buffer.from(expectedSignature, "hex"),
+        Buffer.from(razorpay_signature, "hex")
       );
+
+      if (!isValid) {
+        return jsonWithCors({ error: "Payment verification failed. Signature mismatch." }, 400);
+      }
+
+      finalPaymentId = razorpay_payment_id;
+      paymentStatus = "success";
     }
 
     const order: OrderDocument = {
@@ -86,18 +107,42 @@ export async function POST(request: NextRequest) {
       total: total as number,
       status: "pending",
       paymentMethod,
-      paymentId: body.paymentId as string | undefined,
+      paymentStatus,
       createdAt: new Date(),
     };
 
+    if (finalPaymentId) {
+      order.paymentId = finalPaymentId;
+    }
+
     const client = await clientPromise;
-    const result = await client.db().collection<OrderDocument>(ORDERS_COLLECTION).insertOne(order);
+    const db = client.db();
+
+    // Validate stock
+    const productIds = items.map(i => {
+      try { return new ObjectId(i.productId); } catch { return null; }
+    }).filter(id => id !== null) as ObjectId[];
+
+    const productsInDb = await db.collection<ProductDocument>(PRODUCTS_COLLECTION).find({ _id: { $in: productIds } }).toArray();
+
+    for (const item of items) {
+      const dbProduct = productsInDb.find(p => p._id?.toString() === item.productId);
+      if (!dbProduct) {
+        return jsonWithCors({ error: `Product ${item.name} not found.` }, 400);
+      }
+      const availableStock = dbProduct.stock != null ? Number(dbProduct.stock) : Infinity;
+      if (availableStock < item.quantity) {
+        return jsonWithCors({ error: `Insufficient stock for ${item.name}. Available: ${availableStock}` }, 400);
+      }
+    }
+
+    const result = await db.collection<OrderDocument>(ORDERS_COLLECTION).insertOne(order);
 
     return jsonWithCors(
       {
         orderId: result.insertedId.toString(),
       },
-      201,
+      201
     );
   } catch (error) {
     console.error("Order creation failed", error);
@@ -106,83 +151,9 @@ export async function POST(request: NextRequest) {
       {
         error: "Unable to place order.",
       },
-      500,
+      500
     );
   }
-}
-
-function readOrderItems(value: unknown): OrderItem[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value
-    .map((item) => {
-      if (!item || typeof item !== "object") {
-        return null;
-      }
-
-      const orderItem = item as Record<string, unknown>;
-      const productId = readRequiredString(orderItem.productId);
-      const name = readRequiredString(orderItem.name);
-      const price = readNonNegativeNumber(orderItem.price);
-      const quantity = readPositiveInteger(orderItem.quantity);
-
-      if (!productId || !name || price === null || quantity === null) {
-        return null;
-      }
-
-      return {
-        productId,
-        name,
-        price,
-        quantity,
-      };
-    })
-    .filter((item): item is OrderItem => item !== null);
-}
-
-function readRequiredString(value: unknown) {
-  return typeof value === "string" ? value.trim() : "";
-}
-
-function readNonNegativeNumber(value: unknown) {
-  const parsed = readFiniteNumber(value);
-
-  if (parsed === null || parsed < 0) {
-    return null;
-  }
-
-  return parsed;
-}
-
-function readPositiveInteger(value: unknown) {
-  const parsed = readFiniteNumber(value);
-
-  if (parsed === null || !Number.isInteger(parsed) || parsed < 1) {
-    return null;
-  }
-
-  return parsed;
-}
-
-function readFiniteNumber(value: unknown) {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return value;
-  }
-
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-
-    if (!trimmed) {
-      return null;
-    }
-
-    const parsed = Number(trimmed);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-
-  return null;
 }
 
 function jsonWithCors(body: unknown, status: number) {

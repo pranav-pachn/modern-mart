@@ -19,6 +19,7 @@ export type OrderDocument = {
   status: string;
   paymentMethod: string;
   paymentId?: string;
+  paymentStatus?: string;
   createdAt: Date;
 };
 
@@ -91,6 +92,9 @@ export const orderValidator = {
         minLength: 1,
       },
       paymentId: {
+        bsonType: "string",
+      },
+      paymentStatus: {
         bsonType: "string",
       },
       createdAt: {

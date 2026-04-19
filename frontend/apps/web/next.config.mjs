@@ -13,6 +13,12 @@ const nextConfig = {
   async rewrites() {
     return [
       {
+        source: "/api/products/:path*",
+        destination: process.env.PRODUCTS_API_URL 
+          ? `${process.env.PRODUCTS_API_URL}/:path*`
+          : "http://localhost:3001/api/products/:path*",
+      },
+      {
         source: "/api/products",
         destination: process.env.PRODUCTS_API_URL ?? "http://localhost:3001/api/products",
       },

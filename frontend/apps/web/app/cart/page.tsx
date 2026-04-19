@@ -47,17 +47,20 @@ export default function CartPage() {
         </section>
 
         {items.length === 0 ? (
-          <section className="rounded-3xl border border-dashed border-zinc-300 bg-white p-10 text-center dark:border-zinc-700 dark:bg-zinc-900">
-            <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Your cart is empty</h2>
-            <p className="mt-2 text-zinc-600 dark:text-zinc-300">
-              Add products from the shop to see them here.
+          <section className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-gray-200 bg-gray-50 py-24 px-6 text-center">
+            <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 border border-emerald-100">
+              <span className="text-5xl" aria-hidden="true">🛒</span>
+            </div>
+            <h2 className="text-2xl font-black text-gray-900 mb-3">Your cart is empty</h2>
+            <p className="text-gray-500 max-w-xs mb-8 leading-relaxed">
+              Looks like you haven't added any groceries yet. Start shopping to fill it up!
             </p>
-            <a
-              href="/shop"
-              className="mt-5 inline-flex h-11 items-center justify-center rounded-xl bg-emerald-600 px-5 text-sm font-semibold text-white transition hover:bg-emerald-700"
-            >
-              Browse products
-            </a>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <a href="/shop" className="lp-cta-btn">Browse Products →</a>
+              <a href="/ai" className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-6 py-3.5 text-sm font-bold text-gray-700 transition hover:bg-gray-50">
+                ✨ Try AI Grocery
+              </a>
+            </div>
           </section>
         ) : (
           <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
@@ -152,3 +155,4 @@ export default function CartPage() {
     </main>
   );
 }
+

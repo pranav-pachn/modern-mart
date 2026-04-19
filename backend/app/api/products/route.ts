@@ -17,40 +17,105 @@ export async function OPTIONS() {
   });
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const client = await clientPromise;
-    const products = await client
-      .db()
-      .collection<ProductDocument>(PRODUCTS_COLLECTION)
-      .find()
-      .toArray();
+    const { searchParams } = new URL(request.url);
+    const page  = Math.max(1, parseInt(searchParams.get("page")  ?? "1", 10));
+    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") ?? "12", 10)));
+    const skip  = (page - 1) * limit;
 
-    return NextResponse.json(products, {
-      headers: corsHeaders,
-    });
-  } catch (error) {
-    console.error("Product fetch failed", error);
+    const q = searchParams.get("q") || "";
+    const category = searchParams.get("category") || "";
+    const sort = searchParams.get("sort") || "";
+
+    const query: any = {};
+    if (q) {
+      query.$or = [
+        { name: { $regex: q, $options: "i" } },
+        { category: { $regex: q, $options: "i" } }
+      ];
+    }
+    if (category && category !== "All") {
+      query.category = category;
+    }
+
+    const sortOptions: any = {};
+    if (sort === "price_asc") sortOptions.price = 1;
+    else if (sort === "price_desc") sortOptions.price = -1;
+    else if (sort === "rating") sortOptions.rating = -1;
+    else sortOptions.createdAt = -1; // Default sort
+
+    const client = await clientPromise;
+    const col = client.db().collection<ProductDocument>(PRODUCTS_COLLECTION);
+
+    const [products, total] = await Promise.all([
+      col.find(query).sort(sortOptions).skip(skip).limit(limit).toArray(),
+      col.countDocuments(query),
+    ]);
+
+    const headers = {
+      ...corsHeaders,
+      "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+    };
 
     return NextResponse.json(
-      {
-        error: "Unable to fetch products.",
-      },
-      {
-        status: 500,
-        headers: corsHeaders,
-      },
+      { products, total, page, limit, totalPages: Math.ceil(total / limit) },
+      { headers }
+    );
+  } catch (error) {
+    console.error("Product fetch failed", error);
+    return NextResponse.json(
+      { error: "Unable to fetch products." },
+      { status: 500, headers: corsHeaders }
     );
   }
 }
 
+import { Int32 } from "mongodb";
+import { z } from "zod";
+
+const productSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  price: z.number().nonnegative("Price must be a positive number"),
+  category: z.string().min(1, "Category is required"),
+  image: z.string().url("Image must be a valid URL").or(z.literal("")),
+  stock: z.number().int().nonnegative().optional().default(0),
+});
+
 export async function POST(req: Request) {
-  const body = await req.json();
+  try {
+    const body = await req.json();
+    const parsed = productSchema.safeParse(body);
 
-  const client = await clientPromise;
-  const db = client.db();
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Validation failed", details: parsed.error.format() },
+        { status: 400 }
+      );
+    }
 
-  const result = await db.collection("products").insertOne(body);
+    const client = await clientPromise;
+    const db = client.db();
 
-  return NextResponse.json(result);
+    const now = new Date();
+    const productToInsert = {
+      name: parsed.data.name,
+      price: parsed.data.price,
+      category: parsed.data.category,
+      image: parsed.data.image,
+      stock: new Int32(parsed.data.stock),
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const result = await db.collection("products").insertOne(productToInsert);
+
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error("Failed to add product:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
 }

@@ -1,24 +1,63 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Script from "next/script";
+import { useSession } from "next-auth/react";
 import { useCart } from "@/store/cart";
 
 const ORDERS_API_URL = "/api/orders";
+const ADDRESS_API_URL = "/api/user/address";
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const { items, subtotal, deliveryFee, total, clearCart } = useCart();
   const [statusMessage, setStatusMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cod");
+  const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
+  const [saveThisAddress, setSaveThisAddress] = useState(false);
+  const [addressLabel, setAddressLabel] = useState("Home");
   const [deliveryDetails, setDeliveryDetails] = useState({
     userName: "",
     phone: "",
     address: "",
   });
 
+  useEffect(() => {
+    if (session) {
+      fetchAddresses();
+      setDeliveryDetails((prev) => ({
+        ...prev,
+        userName: session.user?.name || "",
+      }));
+    }
+  }, [session]);
+
+  const fetchAddresses = async () => {
+    try {
+      const res = await fetch(ADDRESS_API_URL);
+      if (res.ok) {
+        const data = await res.json();
+        setSavedAddresses(data);
+        // Auto-fill default address if available
+        const defaultAddr = data.find((a: any) => a.isDefault);
+        if (defaultAddr) {
+          selectAddress(defaultAddr);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch addresses", err);
+    }
+  };
+
+  const selectAddress = (addr: any) => {
+    setDeliveryDetails((prev) => ({
+      ...prev,
+      address: addr.addressLine,
+    }));
+  };
 
   const handlePayment = async (formData: FormData) => {
     try {
@@ -41,7 +80,11 @@ export default function CheckoutPage() {
         name: "Grocery Mart",
         order_id: data.id,
         handler: async function (response: any) {
-          await submitOrder(formData, response.razorpay_payment_id);
+          await submitOrder(formData, {
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+          });
         },
       };
 
@@ -59,10 +102,27 @@ export default function CheckoutPage() {
     }
   };
 
-  const submitOrder = async (formData: FormData | null, paymentId?: string) => {
+  const submitOrder = async (formData: FormData | null, rzpDetails?: any) => {
     const userName = formData?.get("name") as string ?? deliveryDetails.userName;
     const phone = formData?.get("phone") as string ?? deliveryDetails.phone;
     const address = formData?.get("address") as string ?? deliveryDetails.address;
+
+    if (saveThisAddress && session) {
+      try {
+        await fetch(ADDRESS_API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            label: addressLabel,
+            addressLine: address,
+            city: "Bodhan", // Default for this app context
+            pincode: "503185", // Default placeholder
+          }),
+        });
+      } catch (err) {
+        console.error("Failed to save address", err);
+      }
+    }
 
     const payload = {
       userName,
@@ -76,7 +136,7 @@ export default function CheckoutPage() {
       })),
       total: Number(total),
       paymentMethod,
-      paymentId,
+      ...(rzpDetails || {}),
     };
 
     try {
@@ -92,7 +152,7 @@ export default function CheckoutPage() {
       }
 
       clearCart();
-      router.push("/shop");
+      router.push("/order-success");
     } catch (error) {
       const message = error instanceof Error ? error.message : "We could not place your order. Please try again.";
       setStatusMessage(message);
@@ -110,12 +170,6 @@ export default function CheckoutPage() {
     }
 
     const formData = new FormData(event.currentTarget);
-    setDeliveryDetails({
-      userName: String(formData.get("name") ?? ""),
-      phone: String(formData.get("phone") ?? ""),
-      address: String(formData.get("address") ?? ""),
-    });
-
     setIsSubmitting(true);
     setStatusMessage("");
 
@@ -124,40 +178,7 @@ export default function CheckoutPage() {
       return;
     }
 
-    const payload = {
-      userName: String(formData.get("name") ?? ""),
-      phone: String(formData.get("phone") ?? ""),
-      address: String(formData.get("address") ?? ""),
-      items: items.map((item) => ({
-        productId: item.id,
-        name: item.name,
-        price: Number(item.price),
-        quantity: Number(item.quantity),
-      })),
-      total: Number(total),
-      paymentMethod,
-    };
-
-    try {
-      const response = await fetch(ORDERS_API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorBody = await response.json().catch(() => null);
-        throw new Error(errorBody?.error ?? "Order request failed");
-      }
-
-      clearCart();
-      router.push("/shop");
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "We could not place your order. Please try again.";
-      setStatusMessage(message);
-    } finally {
-      setIsSubmitting(false);
-    }
+    await submitOrder(formData);
   };
 
   return (
@@ -191,6 +212,8 @@ export default function CheckoutPage() {
                 id="name"
                 name="name"
                 type="text"
+                value={deliveryDetails.userName}
+                onChange={(e) => setDeliveryDetails({ ...deliveryDetails, userName: e.target.value })}
                 placeholder="Enter your full name"
                 className="h-11 w-full rounded-xl border border-zinc-300 bg-white px-3 text-zinc-900 outline-none ring-emerald-500 transition focus:ring-2 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                 required
@@ -205,11 +228,37 @@ export default function CheckoutPage() {
                 id="phone"
                 name="phone"
                 type="tel"
+                value={deliveryDetails.phone}
+                onChange={(e) => setDeliveryDetails({ ...deliveryDetails, phone: e.target.value })}
                 placeholder="Enter your phone number"
                 className="h-11 w-full rounded-xl border border-zinc-300 bg-white px-3 text-zinc-900 outline-none ring-emerald-500 transition focus:ring-2 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                 required
               />
             </div>
+
+            {savedAddresses.length > 0 && (
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  Select a saved address
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {savedAddresses.map((addr) => (
+                    <button
+                      key={addr.id}
+                      type="button"
+                      onClick={() => selectAddress(addr)}
+                      className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-all ${
+                        deliveryDetails.address === addr.addressLine
+                          ? "bg-emerald-600 text-white"
+                          : "border border-zinc-300 bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                      }`}
+                    >
+                      {addr.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div>
               <label
@@ -222,11 +271,47 @@ export default function CheckoutPage() {
                 id="address"
                 name="address"
                 rows={4}
+                value={deliveryDetails.address}
+                onChange={(e) => setDeliveryDetails({ ...deliveryDetails, address: e.target.value })}
                 placeholder="House no, street, area, and landmark"
                 className="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-zinc-900 outline-none ring-emerald-500 transition focus:ring-2 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                 required
               />
             </div>
+
+            {session && (
+              <div className="flex flex-col gap-3 rounded-2xl border border-dashed border-zinc-300 p-4 dark:border-zinc-700">
+                <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  <input
+                    type="checkbox"
+                    checked={saveThisAddress}
+                    onChange={(e) => setSaveThisAddress(e.target.checked)}
+                    className="h-4 w-4 accent-emerald-600"
+                  />
+                  Save this address for future orders
+                </label>
+                
+                {saveThisAddress && (
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-zinc-500">Save as:</span>
+                    {["Home", "Work", "Other"].map((l) => (
+                      <button
+                        key={l}
+                        type="button"
+                        onClick={() => setAddressLabel(l)}
+                        className={`rounded-lg px-3 py-1 text-xs transition-all ${
+                          addressLabel === l
+                            ? "bg-zinc-800 text-white dark:bg-zinc-200 dark:text-black"
+                            : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
+                        }`}
+                      >
+                        {l}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             <fieldset>
               <legend className="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">

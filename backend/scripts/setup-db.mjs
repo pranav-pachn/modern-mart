@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { MongoClient } from "mongodb";
+import bcrypt from "bcryptjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -9,12 +10,32 @@ const backendRoot = path.resolve(__dirname, "..");
 const repoRoot = path.resolve(backendRoot, "..");
 
 loadEnv(path.join(repoRoot, ".env"));
+loadEnv(path.join(repoRoot, "frontend", "apps", "web", ".env.local"));
 
 const uri = process.env.MONGODB_URI;
 
 if (!uri) {
   throw new Error("Missing MONGODB_URI. Add it to the repository root .env file.");
 }
+
+const userValidator = {
+  $jsonSchema: {
+    bsonType: "object",
+    required: ["email"],
+    additionalProperties: false,
+    properties: {
+      _id: { bsonType: "objectId" },
+      name: { bsonType: "string" },
+      email: { bsonType: "string", minLength: 1 },
+      emailVerified: { bsonType: ["date", "null"] },
+      image: { bsonType: "string" },
+      password: { bsonType: "string" },
+      role: { bsonType: "string" },
+      createdAt: { bsonType: "date" },
+      updatedAt: { bsonType: "date" },
+    },
+  },
+};
 
 const productValidator = {
   $jsonSchema: {
@@ -42,6 +63,7 @@ const orderValidator = {
       "items",
       "total",
       "status",
+      "paymentMethod",
       "createdAt",
     ],
     additionalProperties: false,
@@ -72,6 +94,9 @@ const orderValidator = {
       status: {
         enum: ["pending", "confirmed", "packed", "delivered", "cancelled"],
       },
+      paymentMethod: { bsonType: "string", minLength: 1 },
+      paymentId: { bsonType: "string" },
+      paymentStatus: { bsonType: "string" },
       createdAt: { bsonType: "date" },
     },
   },
@@ -100,25 +125,31 @@ try {
 
   await ensureCollection(db, "products", productValidator);
   await ensureCollection(db, "orders", orderValidator);
+  await ensureCollection(db, "users", userValidator);
+
+  await enforceValidator(db, "products", productValidator);
+  await enforceValidator(db, "orders", orderValidator);
+  await enforceValidator(db, "users", userValidator);
 
   await normalizeProducts(db);
   await normalizeOrders(db);
   await seedProductsIfEmpty(db);
-
-  await enforceValidator(db, "products", productValidator);
-  await enforceValidator(db, "orders", orderValidator);
+  await seedAdminIfEmpty(db);
 
   await db.collection("products").createIndex({ name: 1 }, { unique: true });
   await db.collection("products").createIndex({ category: 1 });
   await db.collection("orders").createIndex({ createdAt: -1 });
   await db.collection("orders").createIndex({ status: 1 });
+  await db.collection("users").createIndex({ email: 1 }, { unique: true });
 
   const productCount = await db.collection("products").countDocuments();
   const orderCount = await db.collection("orders").countDocuments();
+  const userCount = await db.collection("users").countDocuments();
 
   console.log(`Database ready: ${db.databaseName}`);
   console.log(`products: ${productCount} document(s)`);
   console.log(`orders: ${orderCount} document(s)`);
+  console.log(`users: ${userCount} document(s)`);
 } finally {
   await client.close();
 }
@@ -255,6 +286,9 @@ async function normalizeOrders(db) {
               else: "pending",
             },
           },
+          paymentMethod: { $ifNull: ["$paymentMethod", "COD"] },
+          paymentId: { $ifNull: ["$paymentId", "$$REMOVE"] },
+          paymentStatus: { $ifNull: ["$paymentStatus", "$$REMOVE"] },
           createdAt: { $ifNull: ["$createdAt", "$$NOW"] },
         },
       },
@@ -272,3 +306,26 @@ async function seedProductsIfEmpty(db) {
 
   await products.insertMany(seedProducts);
 }
+
+async function seedAdminIfEmpty(db) {
+  const users = db.collection("users");
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+
+  if (!adminEmail || !adminPassword) return;
+
+  const existingAdmin = await users.findOne({ email: adminEmail });
+  if (!existingAdmin) {
+    const hashedPassword = await bcrypt.hash(adminPassword, 10);
+    await users.insertOne({
+      name: "Administrator",
+      email: adminEmail,
+      password: hashedPassword,
+      role: "admin",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    console.log("Seeded default admin user.");
+  }
+}
+

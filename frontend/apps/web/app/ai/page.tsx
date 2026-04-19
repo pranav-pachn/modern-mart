@@ -15,6 +15,7 @@ import {
   Zap,
 } from "lucide-react";
 import Link from "next/link";
+import { AiResultSkeleton } from "@/components/Skeletons";
 
 type MatchedItem = {
   item: string;
@@ -43,10 +44,30 @@ const EXAMPLE_PROMPTS = [
 export default function AIGroceryPage() {
   const [input, setInput] = useState("");
   const [results, setResults] = useState<MatchedItem[]>([]);
+  const [suggestedResults, setSuggestedResults] = useState<MatchedItem[]>([]);
+  const [manualItem, setManualItem] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorPrompt, setErrorPrompt] = useState("");
   const [hasGenerated, setHasGenerated] = useState(false);
   const { cart, addToCart, increaseQuantity, decreaseQuantity } = useCart();
+
+  const handleAddManualItem = async () => {
+    if (!manualItem.trim()) return;
+    try {
+      const matchRes = await fetch("/api/ai/match", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: [{ item: manualItem, qty: "1" }] }),
+      });
+      if (matchRes.ok) {
+        const matched: MatchedItem[] = await matchRes.json();
+        setResults(prev => [...prev, ...matched]);
+        setManualItem("");
+      }
+    } catch (e: any) {
+      console.error(e);
+    }
+  };
 
   const generateList = async (promptText?: string) => {
     const query = promptText ?? input;
@@ -55,6 +76,7 @@ export default function AIGroceryPage() {
     setIsLoading(true);
     setErrorPrompt("");
     setResults([]);
+    setSuggestedResults([]);
     setHasGenerated(false);
     if (promptText) setInput(promptText);
 
@@ -72,15 +94,21 @@ export default function AIGroceryPage() {
 
       const data = await res.json();
 
-      let parsed: any[] = [];
+      let parsedItems: any[] = [];
+      let parsedSuggested: any[] = [];
       try {
-        parsed = typeof data.result === "string" ? JSON.parse(data.result) : data.result;
-        if (!Array.isArray(parsed)) parsed = [];
+        const rawResult = typeof data.result === "string" ? JSON.parse(data.result) : data.result;
+        if (Array.isArray(rawResult)) {
+          parsedItems = rawResult;
+        } else if (rawResult && typeof rawResult === "object") {
+          parsedItems = Array.isArray(rawResult.items) ? rawResult.items : [];
+          parsedSuggested = Array.isArray(rawResult.suggested) ? rawResult.suggested : [];
+        }
       } catch {
         throw new Error("Could not understand the AI response. Please try again.");
       }
 
-      if (parsed.length === 0) {
+      if (parsedItems.length === 0) {
         throw new Error("No grocery items found. Try being more specific.");
       }
 
@@ -88,7 +116,7 @@ export default function AIGroceryPage() {
       const matchRes = await fetch("/api/ai/match", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: parsed }),
+        body: JSON.stringify({ items: [...parsedItems, ...parsedSuggested] }),
       });
 
       if (!matchRes.ok) {
@@ -96,7 +124,8 @@ export default function AIGroceryPage() {
       }
 
       const matched: MatchedItem[] = await matchRes.json();
-      setResults(matched);
+      setResults(matched.slice(0, parsedItems.length));
+      setSuggestedResults(matched.slice(parsedItems.length));
       setHasGenerated(true);
     } catch (e: any) {
       setErrorPrompt(e.message || "Something went wrong. Please try again.");
@@ -227,20 +256,27 @@ export default function AIGroceryPage() {
           )}
         </section>
 
-        {/* Loading skeleton */}
-        {isLoading && (
-          <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-28 animate-pulse rounded-2xl border border-zinc-100 bg-white/70"
-              />
-            ))}
+        {isLoading && <AiResultSkeleton />}
+
+        {/* Empty state: generated but nothing in catalog */}
+        {hasGenerated && results.length > 0 && availableCount === 0 && (
+          <section className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-zinc-200 bg-white/80 py-16 px-6 text-center backdrop-blur">
+            <span className="text-6xl mb-5" aria-hidden="true">🥲</span>
+            <h3 className="text-xl font-bold text-zinc-900 mb-2">No matching items in store</h3>
+            <p className="text-zinc-500 text-sm max-w-xs mb-6">
+              We generated a list, but none of the ingredients are currently in our catalog. Try a different dish or check back later!
+            </p>
+            <button
+              onClick={() => { setResults([]); setHasGenerated(false); setInput(""); }}
+              className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700"
+            >
+              Try Another Dish
+            </button>
           </section>
         )}
 
         {/* Results */}
-        {hasGenerated && results.length > 0 && (
+        {hasGenerated && results.length > 0 && availableCount > 0 && (
           <section className="flex flex-col gap-6">
             {/* Stats bar */}
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-100 bg-white/80 px-5 py-3 backdrop-blur">
@@ -345,6 +381,69 @@ export default function AIGroceryPage() {
                 );
               })}
             </div>
+
+
+            {/* Add missing items manually */}
+            <div className="mt-2 flex items-center gap-3">
+              <input
+                type="text"
+                placeholder="Missing something? Add manually..."
+                value={manualItem}
+                onChange={(e) => setManualItem(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleAddManualItem()}
+                className="h-11 flex-1 rounded-xl border border-zinc-200 bg-white px-4 text-sm text-zinc-900 outline-none transition focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+              />
+              <button
+                onClick={handleAddManualItem}
+                disabled={!manualItem.trim()}
+                className="flex h-11 items-center justify-center rounded-xl bg-zinc-900 px-5 text-sm font-semibold text-white transition hover:bg-zinc-700 disabled:opacity-50"
+              >
+                Add Item
+              </button>
+            </div>
+
+            {/* Suggested items */}
+            {suggestedResults.length > 0 && (
+              <div className="mt-6">
+                <h3 className="mb-4 text-lg font-bold text-zinc-900">You might also need:</h3>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {suggestedResults.map((item, i) => {
+                    const cartItem = item.product ? cart.find((c) => c.id === item.product!.id) : undefined;
+                    return (
+                      <div key={`sugg-${i}`} className={`flex flex-col justify-between rounded-2xl border p-4 transition-all ${item.product ? "border-emerald-100 bg-gradient-to-b from-white to-emerald-50/30 hover:border-emerald-200 hover:shadow-md" : "border-dashed border-zinc-200 bg-zinc-50/60"}`}>
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="font-semibold capitalize text-zinc-900">{item.item}</p>
+                            <p className="mt-0.5 text-xs text-zinc-500">Suggested</p>
+                          </div>
+                          {item.product ? <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-500" /> : <XCircle className="h-5 w-5 shrink-0 text-zinc-300" />}
+                        </div>
+                        {item.product ? (
+                          <div className="mt-4">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-xs text-zinc-400">{item.product.name}</p>
+                                <p className="text-lg font-bold text-zinc-900">₹{item.product.price}</p>
+                              </div>
+                              {item.product.category && <span className="rounded-full bg-zinc-100 px-2 py-1 text-[10px] font-semibold text-zinc-500">{item.product.category}</span>}
+                            </div>
+                            <div className="mt-3">
+                              {cartItem ? (
+                                <div className="flex h-9 items-center justify-between rounded-xl bg-emerald-600 text-white">
+                                  <button onClick={() => decreaseQuantity(item.product!.id)} className="flex h-full w-10 items-center justify-center rounded-l-xl transition hover:bg-emerald-700"><Minus className="h-4 w-4" /></button>
+                                  <span className="text-sm font-bold">{cartItem.quantity}</span>
+                                  <button onClick={() => increaseQuantity(item.product!.id)} className="flex h-full w-10 items-center justify-center rounded-r-xl transition hover:bg-emerald-700"><Plus className="h-4 w-4" /></button>
+                                </div>
+                              ) : <button onClick={() => addToCart(item.product!)} className="flex h-9 w-full items-center justify-center rounded-xl bg-zinc-900 text-sm font-semibold text-white transition hover:bg-zinc-700">Add to Cart</button>}
+                            </div>
+                          </div>
+                        ) : <p className="mt-4 text-xs font-medium text-red-400">Not available currently</p>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Bottom CTA */}
             {availableCount > 0 && (

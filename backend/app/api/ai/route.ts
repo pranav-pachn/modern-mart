@@ -81,8 +81,9 @@ Rules:
 - Use short, simple item names (e.g. "tomato", "paneer", "onion", "basmati rice")
 - Use lowercase only
 - Include realistic quantities (e.g. "500g", "2 pcs", "1 litre", "1 bunch")
-- Output ONLY valid JSON. No markdown, no explanation, no backticks.
-- Format: [{ "item": "name", "qty": "quantity" }]`;
+- Format: { "items": [{ "item": "name", "qty": "quantity" }], "suggested": [{ "item": "name", "qty": "quantity" }] }
+- 'suggested' should contain 2-3 optional complementary items that go well with the dish.
+- Output ONLY valid JSON. No markdown, no explanation, no backticks, no conversational text.`;
 
     const messages = [
       { role: "system", content: systemPrompt },
@@ -114,36 +115,32 @@ Rules:
         headers,
         body: JSON.stringify({
           model: provider.model,
-          messages: messages,
-          temperature: 0.2,
-        })
+          messages,
+          temperature: 0.2, // Lower temperature for more structured JSON
+          response_format: { type: "json_object" }, // Attempt to force JSON if supported
+        }),
       });
 
-      if (res.ok) {
-        responseData = await res.json();
-        success = true;
-        currentProviderIndex = pIndex; // Save working provider index
-        break; // Successfully got the response, break out of loop
-      } else {
-        const errorText = await res.text();
-        console.error(`${provider.name} API error:`, res.status, errorText);
+      if (!res.ok) {
         lastErrorDetails = res.status;
         providerErrors.push({ provider: provider.name, status: res.status });
+        continue;
       }
+
+      responseData = await res.json();
+      success = true;
+      currentProviderIndex = pIndex;
+      break;
     }
 
     if (!success || !responseData) {
-      const allAuthErrors =
-        providerErrors.length > 0 &&
-        providerErrors.every((e) => e.status === 401 || e.status === 403);
-
-      if (allAuthErrors) {
+      if (providerErrors.length === providers.length) {
         return NextResponse.json(
-          {
-            error: "All configured AI keys were rejected by providers. Check OPENROUTER_API_KEY and GROQ_API_KEY in the root .env.",
-            details: providerErrors,
+          { 
+            error: "All AI providers are currently unavailable.", 
+            details: providerErrors 
           },
-          { status: 401, headers: corsHeaders }
+          { status: 503, headers: corsHeaders }
         );
       }
 
@@ -154,13 +151,28 @@ Rules:
     }
 
     // Extract text from OpenAI/Chat completions standard response
-    const text = responseData.choices?.[0]?.message?.content || "[]";
+    const text = responseData.choices?.[0]?.message?.content || "{}";
 
-    let parsed: any[] = [];
+    let parsed: any = { items: [], suggested: [] };
     try {
-      const cleanText = text.replace(/```(?:json)?\n?/g, "").replace(/```/g, "").trim();
-      parsed = JSON.parse(cleanText);
-      if (!Array.isArray(parsed)) parsed = [];
+      let cleanText = text.replace(/```(?:json)?\n?/gi, "").replace(/```/g, "").trim();
+      const firstCurly = cleanText.indexOf('{');
+      const lastCurly = cleanText.lastIndexOf('}');
+      if (firstCurly !== -1 && lastCurly !== -1) {
+         cleanText = cleanText.substring(firstCurly, lastCurly + 1);
+      }
+      
+      const tempParsed = JSON.parse(cleanText);
+      if (Array.isArray(tempParsed)) {
+        parsed = { items: tempParsed, suggested: [] };
+      } else if (tempParsed.items && Array.isArray(tempParsed.items)) {
+        parsed = { 
+          items: tempParsed.items, 
+          suggested: Array.isArray(tempParsed.suggested) ? tempParsed.suggested : [] 
+        };
+      } else {
+        parsed = { items: [], suggested: [] };
+      }
     } catch (parseError) {
       console.error("AI JSON parse fail:", text);
     }
