@@ -69,6 +69,10 @@ function formatDate(dateStr: string) {
   return d.toLocaleDateString("en-IN", { month: "short", day: "numeric" });
 }
 
+function formatChartDate(label: unknown) {
+  return formatDate(String(label ?? ""));
+}
+
 function capitalize(s: string) {
   if (!s) return "Unknown";
   return s.charAt(0).toUpperCase() + s.slice(1);
@@ -367,7 +371,7 @@ export default function AdminDashboard() {
                   />
                   <Tooltip
                     formatter={(v: any) => [v, "Orders"]}
-                    labelFormatter={formatDate}
+                    labelFormatter={formatChartDate}
                     contentStyle={{
                       borderRadius: "12px",
                       border: "1px solid #f1f5f9",
@@ -466,7 +470,7 @@ export default function AdminDashboard() {
             ) : (
               <div className="space-y-4">
                 {analytics.topProducts.map((p, idx) => {
-                  const maxOrders = analytics.topProducts[0].orderCount;
+                  const maxOrders = analytics.topProducts[0]?.orderCount ?? 0;
                   const pct = maxOrders > 0 ? (p.orderCount / maxOrders) * 100 : 0;
                   return (
                     <div key={p.name} className="space-y-1">

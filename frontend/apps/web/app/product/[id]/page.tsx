@@ -91,7 +91,7 @@ export default function ProductDetailsPage() {
         body: JSON.stringify({ rating: reviewRating, comment: reviewComment }),
       });
       
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Failed to submit review");
       
       toast.success("Review added successfully!");

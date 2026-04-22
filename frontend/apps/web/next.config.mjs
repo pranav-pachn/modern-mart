@@ -18,6 +18,11 @@ const nextConfig = {
         destination: "/api/user/:path*",
       },
       {
+        // product reviews need the frontend Auth.js session — do NOT proxy to backend
+        source: "/api/products/:id/reviews",
+        destination: "/api/products/:id/reviews",
+      },
+      {
         source: "/api/products/:path*",
         destination: process.env.PRODUCTS_API_URL 
           ? `${process.env.PRODUCTS_API_URL}/:path*`
