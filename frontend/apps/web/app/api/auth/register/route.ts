@@ -9,7 +9,34 @@ const registerSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters long"),
 });
 
+// Simple in-memory rate limiter — 5 registrations per minute per IP
+const rateLimitMap = new Map<string, { count: number; expires: number }>();
+
+function checkRateLimit(req: NextRequest): NextResponse | null {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const now = Date.now();
+  const windowMs = 60_000;
+  const maxAttempts = 5;
+
+  const record = rateLimitMap.get(ip);
+  if (!record || record.expires < now) {
+    rateLimitMap.set(ip, { count: 1, expires: now + windowMs });
+    return null;
+  }
+  if (record.count >= maxAttempts) {
+    return NextResponse.json(
+      { error: "Too many registration attempts. Please try again later." },
+      { status: 429 }
+    );
+  }
+  record.count += 1;
+  return null;
+}
+
 export async function POST(req: NextRequest) {
+  const limited = checkRateLimit(req);
+  if (limited) return limited;
+
   try {
     const body = await req.json();
     const parsed = registerSchema.safeParse(body);

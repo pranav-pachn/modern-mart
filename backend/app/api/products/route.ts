@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import clientPromise from "@/lib/mongodb";
+import { requireAdminToken } from "@/lib/api-guard";
 import { PRODUCTS_COLLECTION, type ProductDocument } from "@/models/Product";
 
 export const runtime = "nodejs";
@@ -7,7 +8,7 @@ export const runtime = "nodejs";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Headers": "Content-Type, x-admin-secret",
 };
 
 export async function OPTIONS() {
@@ -84,15 +85,24 @@ const productSchema = z.object({
   unit: z.string().optional(),
 });
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const authError = requireAdminToken(req);
+  if (authError) return authError;
+
   try {
-    const body = await req.json();
-    const parsed = productSchema.safeParse(body);
+    let rawBody: unknown;
+    try {
+      rawBody = await req.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400, headers: corsHeaders });
+    }
+
+    const parsed = productSchema.safeParse(rawBody);
 
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Validation failed", details: parsed.error.format() },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -120,12 +130,12 @@ export async function POST(req: Request) {
 
     const result = await db.collection<ProductDocument>(PRODUCTS_COLLECTION).insertOne(productToInsert);
 
-    return NextResponse.json(result);
+    return NextResponse.json(result, { headers: corsHeaders });
   } catch (error) {
     console.error("Failed to add product:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }

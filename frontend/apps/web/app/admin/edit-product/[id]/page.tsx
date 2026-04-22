@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/componen
 import { Package, Upload, Check, Loader2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
+import { adminFetch } from "@/lib/admin-fetch";
+
 const CATEGORIES = ["Vegetables", "Fruits", "Dairy", "Beverages", "Snacks", "Bakery", "Household", "Staples", "Other"];
 
 export default function AdminEditProduct() {
@@ -64,8 +66,9 @@ export default function AdminEditProduct() {
     if (!form.image) { alert("Please upload a product image."); return; }
     setIsProcessing(true);
 
-    const res = await fetch(`/api/products/${id}`, {
+    const res = await adminFetch(`/api/products/${id}`, {
       method: "PUT",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...form, price: Number(form.price), stock: Number(form.stock) }),
     });
 

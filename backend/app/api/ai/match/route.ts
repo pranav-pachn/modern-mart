@@ -122,27 +122,33 @@ export async function POST(req: NextRequest) {
         }
 
         // ── Step 1: DB-level $regex filter ───────────────────────────────────
-        // Build an $or of per-token $regex queries so MongoDB does the heavy
-        // lifting and we only score a small candidate set in memory.
-        const significantTokens = queryTokens.filter((t) => t.length > 2);
-        const regexClauses = significantTokens.map((token) => ({
-          name: { $regex: token, $options: "i" },
-        }));
+        const rawItem = li.item || "";
+        let keyword = rawItem.toLowerCase().split(" ")[0];
+        
+        // Handle basic plurals
+        if (keyword.endsWith("oes")) {
+          keyword = keyword.slice(0, -2); // tomatoes -> tomato
+        } else if (keyword.endsWith("ies")) {
+          keyword = keyword.slice(0, -3) + "y"; // berries -> berry
+        } else if (keyword.endsWith("s") && !keyword.endsWith("ss")) {
+          keyword = keyword.slice(0, -1); // onions -> onion, apples -> apple
+        }
 
         let candidates: ProductDocument[] = [];
-        if (regexClauses.length > 0) {
-          candidates = await col.find({ $or: regexClauses }).toArray();
+        if (keyword) {
+          candidates = await col.find({ name: { $regex: keyword, $options: "i" } }).toArray();
         }
 
         // ── Step 2: Full-collection fallback if no regex hits ────────────────
-        // Capped at 500 to prevent unbounded scans on large catalogues.
         if (candidates.length === 0) {
           candidates = await col.find().limit(500).toArray();
         }
 
-        // ── Step 3: In-memory scoring on the (small) candidate pool ─────────
+        // ── Step 3: In-memory scoring on the candidate pool ─────────
         let bestProduct: ProductDocument | null = null;
+        let fallbackProduct: ProductDocument | null = null;
         let maxScore = 0;
+        let maxFallbackScore = 0;
 
         for (const p of candidates) {
           const score = scoreMatch(queryTokens, queryText, p);
@@ -150,6 +156,16 @@ export async function POST(req: NextRequest) {
             maxScore = score;
             bestProduct = p;
           }
+          if (score > maxFallbackScore) {
+            maxFallbackScore = score;
+            fallbackProduct = p;
+          }
+        }
+
+        let isSuggested = false;
+        if (!bestProduct && fallbackProduct && maxFallbackScore > 0) {
+          bestProduct = fallbackProduct;
+          isSuggested = true;
         }
 
         const normalizedProduct = bestProduct
@@ -169,6 +185,7 @@ export async function POST(req: NextRequest) {
           item: li.item,
           qty: li.qty,
           product: normalizedProduct,
+          suggested: isSuggested,
         };
       })
     );

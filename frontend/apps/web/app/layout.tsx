@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { SessionProvider } from "next-auth/react";
 import { Toaster } from "react-hot-toast";
+import { AuthProvider } from "@/components/auth-provider";
 import Navbar from "@/components/Navbar";
 import "./globals.css";
 
@@ -32,7 +32,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <SessionProvider>
+        <AuthProvider>
           <Toaster
             position="top-right"
             toastOptions={{
@@ -56,7 +56,7 @@ export default function RootLayout({
           />
           <Navbar />
           <main className="flex-1">{children}</main>
-        </SessionProvider>
+        </AuthProvider>
       </body>
     </html>
   );

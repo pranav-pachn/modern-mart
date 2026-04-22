@@ -1,4 +1,3 @@
-import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 
 // Simple in-memory rate limiter for AI route
@@ -7,8 +6,15 @@ const aiRateLimit = new Map<string, { count: number; expires: number }>();
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, x-admin-secret",
 };
+
+// Check if the request carries a valid x-admin-secret header
+function hasAdminSecret(req: NextRequest): boolean {
+  const secret = process.env.ADMIN_SECRET || "";
+  const provided = req.headers.get("x-admin-secret") ?? "";
+  return secret.length > 0 && provided === secret;
+}
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -40,17 +46,22 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  // 2. Admin API Protection (JWT Verification)
+  // 2. Admin API Protection
   // Protected paths:
   // - POST /api/products
   // - PUT/DELETE /api/products/*
   // - POST /api/orders/update
+  //
+  // Auth is accepted via x-admin-secret header (used by adminFetch on the
+  // frontend). Per-route handlers already call requireAdminToken() as a
+  // second line of defence.
   const isProductsRoute = pathname === "/api/products" || pathname.startsWith("/api/products/");
+  const isReviewsRoute = pathname.match(/^\/api\/products\/[^/]+\/reviews/);
   const isOrdersUpdateRoute = pathname.startsWith("/api/orders/update");
 
   let requiresAdmin = false;
 
-  if (isProductsRoute && method !== "GET") {
+  if (isProductsRoute && method !== "GET" && !isReviewsRoute) {
     requiresAdmin = true;
   }
   if (isOrdersUpdateRoute) {
@@ -58,17 +69,7 @@ export async function middleware(req: NextRequest) {
   }
 
   if (requiresAdmin) {
-    const isProduction = process.env.NODE_ENV === "production";
-    const cookieName = isProduction ? "__Secure-authjs.session-token" : "authjs.session-token";
-
-    const token = await getToken({ 
-      req, 
-      secret: process.env.AUTH_SECRET,
-      cookieName: cookieName,
-      secureCookie: isProduction
-    });
-
-    if (!token || token.role !== "admin") {
+    if (!hasAdminSecret(req)) {
       return NextResponse.json(
         { error: "Unauthorized. Admin access required." },
         { status: 401, headers: corsHeaders }

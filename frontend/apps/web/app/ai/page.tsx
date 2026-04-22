@@ -33,6 +33,7 @@ type MatchedItem = {
     image?: string;
     stock?: number;
   } | null;
+  suggested?: boolean;
 };
 
 const EXAMPLE_PROMPTS = [
@@ -339,7 +340,14 @@ export default function AIGroceryPage() {
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <p className="font-semibold capitalize text-zinc-900">{item.item}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold capitalize text-zinc-900">{item.item}</p>
+                          {item.suggested && (
+                            <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 uppercase tracking-wide">
+                              Suggested Match
+                            </span>
+                          )}
+                        </div>
                         <p className="mt-0.5 text-xs text-zinc-500">Qty: {item.qty}</p>
                       </div>
                       {item.product ? (
