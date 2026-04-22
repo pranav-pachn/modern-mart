@@ -16,6 +16,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { AiResultSkeleton } from "@/components/Skeletons";
+import { useSession } from "next-auth/react";
+import { saveAiHistory } from "@/lib/ai-history";
+import toast from "react-hot-toast";
 
 type MatchedItem = {
   item: string;
@@ -50,6 +53,7 @@ export default function AIGroceryPage() {
   const [errorPrompt, setErrorPrompt] = useState("");
   const [hasGenerated, setHasGenerated] = useState(false);
   const { cart, addToCart, increaseQuantity, decreaseQuantity } = useCart();
+  const { data: session } = useSession();
 
   const handleAddManualItem = async () => {
     if (!manualItem.trim()) return;
@@ -124,9 +128,14 @@ export default function AIGroceryPage() {
       }
 
       const matched: MatchedItem[] = await matchRes.json();
-      setResults(matched.slice(0, parsedItems.length));
-      setSuggestedResults(matched.slice(parsedItems.length));
+      const finalResults = matched.slice(0, parsedItems.length);
+      const finalSuggested = matched.slice(parsedItems.length);
+      
+      setResults(finalResults);
+      setSuggestedResults(finalSuggested);
       setHasGenerated(true);
+
+      await saveAiHistory(query, finalResults, finalSuggested, session);
     } catch (e: any) {
       setErrorPrompt(e.message || "Something went wrong. Please try again.");
     } finally {
@@ -139,9 +148,13 @@ export default function AIGroceryPage() {
   };
 
   const addAllToCart = () => {
-    results.forEach((r) => {
+    const available = results.filter((r) => r.product);
+    available.forEach((r) => {
       if (r.product) addToCart(r.product);
     });
+    if (available.length > 0) {
+      toast.success(`${available.length} item${available.length > 1 ? "s" : ""} added to cart!`);
+    }
   };
 
   const availableCount = results.filter((r) => r.product).length;
@@ -176,6 +189,12 @@ export default function AIGroceryPage() {
                 {cart.reduce((s, i) => s + i.quantity, 0)}
               </span>
             )}
+          </Link>
+          <Link
+            href="/ai-history"
+            className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white/80 px-4 py-2 text-sm font-semibold text-zinc-700 backdrop-blur transition hover:bg-white hover:shadow-sm"
+          >
+            History
           </Link>
         </div>
 
@@ -364,7 +383,7 @@ export default function AIGroceryPage() {
                             </div>
                           ) : (
                             <button
-                              onClick={() => addToCart(item.product!)}
+                              onClick={() => { addToCart(item.product!); toast.success(`${item.product!.name} added to cart`); }}
                               className="flex h-9 w-full items-center justify-center rounded-xl bg-zinc-900 text-sm font-semibold text-white transition hover:bg-zinc-700"
                             >
                               Add to Cart
@@ -434,7 +453,7 @@ export default function AIGroceryPage() {
                                   <span className="text-sm font-bold">{cartItem.quantity}</span>
                                   <button onClick={() => increaseQuantity(item.product!.id)} className="flex h-full w-10 items-center justify-center rounded-r-xl transition hover:bg-emerald-700"><Plus className="h-4 w-4" /></button>
                                 </div>
-                              ) : <button onClick={() => addToCart(item.product!)} className="flex h-9 w-full items-center justify-center rounded-xl bg-zinc-900 text-sm font-semibold text-white transition hover:bg-zinc-700">Add to Cart</button>}
+                              ) : <button onClick={() => { addToCart(item.product!); toast.success(`${item.product!.name} added to cart`); }} className="flex h-9 w-full items-center justify-center rounded-xl bg-zinc-900 text-sm font-semibold text-white transition hover:bg-zinc-700">Add to Cart</button>}
                             </div>
                           </div>
                         ) : <p className="mt-4 text-xs font-medium text-red-400">Not available currently</p>}

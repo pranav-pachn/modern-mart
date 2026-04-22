@@ -27,18 +27,22 @@ export async function OPTIONS() {
   });
 }
 
+// ─── Text Normalization ────────────────────────────────────────────────────────
+const normalize = (text: string) => text.toLowerCase().replace(/s$/, "");
+
 // ─── Score a product candidate against a tokenized query ─────────────────────
 function scoreMatch(
   queryTokens: string[],
   queryText: string,
   p: ProductDocument
 ): number {
-  const pName = (p.name || "").toLowerCase().trim();
-  const pCategory = (p.category || "").toLowerCase().trim();
+  const pName = normalize(p.name || "").trim();
+  const pCategory = normalize(p.category || "").trim();
   const pTokens = pName
     .replace(/[^a-z0-9\s]/g, "")
     .split(/\s+/)
-    .filter(Boolean);
+    .filter(Boolean)
+    .map(normalize);
 
   // Exact full-name match — highest priority
   if (pName === queryText) return 200;
@@ -106,11 +110,12 @@ export async function POST(req: NextRequest) {
 
     const matchedItems = await Promise.all(
       items.map(async (li: any) => {
-        const queryText = (li.item || "").toLowerCase().trim();
+        const queryText = normalize(li.item || "").trim();
         const queryTokens = queryText
           .replace(/[^a-z0-9\s]/g, "")
           .split(/\s+/)
-          .filter(Boolean);
+          .filter(Boolean)
+          .map(normalize);
 
         if (queryTokens.length === 0) {
           return { item: li.item, qty: li.qty, product: null };

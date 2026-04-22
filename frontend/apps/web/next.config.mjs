@@ -13,6 +13,11 @@ const nextConfig = {
   async rewrites() {
     return [
       {
+        // user address is handled by the frontend API route directly — do NOT proxy to backend
+        source: "/api/user/:path*",
+        destination: "/api/user/:path*",
+      },
+      {
         source: "/api/products/:path*",
         destination: process.env.PRODUCTS_API_URL 
           ? `${process.env.PRODUCTS_API_URL}/:path*`
@@ -35,6 +40,11 @@ const nextConfig = {
       {
         source: "/api/payment",
         destination: process.env.PAYMENT_API_URL ?? "http://localhost:3001/api/payment",
+      },
+      {
+        // ai history is handled by the frontend API route directly — do NOT proxy to backend
+        source: "/api/ai/history",
+        destination: "/api/ai/history",
       },
       {
         source: "/api/ai/:path*",

@@ -2,14 +2,43 @@
 
 import Link from "next/link";
 import { useSession, signIn, signOut } from "next-auth/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { syncHistoryOnLogin } from "@/lib/ai-history";
+import { useCart } from "@/store/cart";
+import { ShoppingCart, Sparkles, LayoutDashboard, LogOut, User, X, Menu, MapPin } from "lucide-react";
 
 export default function Navbar() {
   const { data: session, status } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const pathname = usePathname();
+  const { cart } = useCart();
+
+  const cartCount = cart.reduce((s, i) => s + i.quantity, 0);
+  const isAdmin = (session?.user as any)?.role === "admin";
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      syncHistoryOnLogin();
+    }
+  }, [status]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (!dropdownOpen) return;
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("#navbar-user-menu")) setDropdownOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [dropdownOpen]);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
 
   // Do not render the global storefront navbar in the admin dashboard
   if (pathname?.startsWith("/admin")) {
@@ -29,19 +58,33 @@ export default function Navbar() {
         <nav className="navbar-links" aria-label="Main navigation">
           <Link href="/shop" className="nav-link">Shop</Link>
           <Link href="/ai" className="nav-link">
-            <span>✨</span> AI Grocery
+            <Sparkles className="h-3.5 w-3.5" />
+            AI Grocery
           </Link>
-          <Link href="/cart" className="nav-link">Cart</Link>
         </nav>
 
-        {/* Auth area */}
+        {/* Right side actions */}
         <div className="navbar-auth">
+          {/* Cart icon with badge (always visible) */}
+          <Link
+            href="/cart"
+            aria-label={`Cart, ${cartCount} item${cartCount !== 1 ? "s" : ""}`}
+            className="relative inline-flex items-center justify-center h-10 w-10 rounded-xl border border-gray-200 bg-white text-gray-700 transition hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300"
+          >
+            <ShoppingCart className="h-4.5 w-4.5" style={{ width: "18px", height: "18px" }} />
+            {cartCount > 0 && (
+              <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-black text-white shadow-sm ring-2 ring-white">
+                {cartCount > 99 ? "99+" : cartCount}
+              </span>
+            )}
+          </Link>
+
           {status === "loading" && (
             <div className="nav-skeleton" aria-hidden="true" />
           )}
 
           {status === "unauthenticated" && (
-            <div className="flex gap-2 items-center">
+            <div className="hidden sm:flex gap-2 items-center">
               <button
                 id="navbar-signin-btn"
                 onClick={() => signIn("google", { callbackUrl: "/shop" })}
@@ -56,12 +99,12 @@ export default function Navbar() {
                 Sign In
               </button>
               <Link
-                href="/login"
-                className="nav-signin-btn text-white! bg-emerald-600! border-emerald-600! hover:bg-emerald-700!"
-                style={{ 
-                  backgroundColor: "var(--emerald-dark)", 
-                  color: "white", 
-                  borderColor: "var(--emerald-dark)" 
+                href="/register"
+                className="nav-signin-btn"
+                style={{
+                  backgroundColor: "var(--emerald-dark)",
+                  color: "white",
+                  borderColor: "var(--emerald-dark)",
                 }}
               >
                 Sign Up
@@ -70,7 +113,7 @@ export default function Navbar() {
           )}
 
           {status === "authenticated" && session?.user && (
-            <div className="nav-user-menu">
+            <div className="nav-user-menu hidden sm:block" id="navbar-user-menu">
               <button
                 id="navbar-user-btn"
                 className="user-avatar-btn"
@@ -104,16 +147,39 @@ export default function Navbar() {
                     <p className="dropdown-email">{session.user.email}</p>
                   </div>
                   <div className="dropdown-divider" />
-                  {(session.user as any)?.role === "admin" && (
-                    <Link href="/admin" className="dropdown-item" role="menuitem" onClick={() => setDropdownOpen(false)}>
-                      🚀 Admin Dashboard
+                  {isAdmin && (
+                    <Link
+                      href="/admin"
+                      className="dropdown-item"
+                      role="menuitem"
+                      onClick={() => setDropdownOpen(false)}
+                    >
+                      <LayoutDashboard className="h-4 w-4" />
+                      Admin Dashboard
                     </Link>
                   )}
-                  <Link href="/shop" className="dropdown-item" role="menuitem" onClick={() => setDropdownOpen(false)}>
-                    🛍️ My Orders
+                  <Link
+                    href="/profile"
+                    className="dropdown-item"
+                    role="menuitem"
+                    onClick={() => setDropdownOpen(false)}
+                  >
+                    <User className="h-4 w-4" />
+                    My Profile & Addresses
                   </Link>
-                  <Link href="/cart" className="dropdown-item" role="menuitem" onClick={() => setDropdownOpen(false)}>
-                    🛒 Cart
+                  <Link
+                    href="/cart"
+                    className="dropdown-item"
+                    role="menuitem"
+                    onClick={() => setDropdownOpen(false)}
+                  >
+                    <ShoppingCart className="h-4 w-4" />
+                    Cart
+                    {cartCount > 0 && (
+                      <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-black text-white">
+                        {cartCount}
+                      </span>
+                    )}
                   </Link>
                   <div className="dropdown-divider" />
                   <button
@@ -122,6 +188,7 @@ export default function Navbar() {
                     role="menuitem"
                     onClick={() => { setDropdownOpen(false); signOut({ callbackUrl: "/" }); }}
                   >
+                    <LogOut className="h-4 w-4" />
                     Sign Out
                   </button>
                 </div>
@@ -133,20 +200,50 @@ export default function Navbar() {
           <button
             className="mobile-menu-btn"
             onClick={() => setMenuOpen((v) => !v)}
-            aria-label="Toggle menu"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
             aria-expanded={menuOpen}
           >
-            <span className={`hamburger ${menuOpen ? "hamburger-open" : ""}`} />
+            {menuOpen
+              ? <X className="h-5 w-5 text-gray-700" />
+              : <Menu className="h-5 w-5 text-gray-700" />
+            }
           </button>
         </div>
       </div>
 
-      {/* Mobile nav */}
+      {/* Mobile nav drawer */}
       {menuOpen && (
         <nav className="mobile-nav" aria-label="Mobile navigation">
-          <Link href="/shop" className="mobile-nav-link" onClick={() => setMenuOpen(false)}>Shop</Link>
-          <Link href="/ai" className="mobile-nav-link" onClick={() => setMenuOpen(false)}>✨ AI Grocery</Link>
-          <Link href="/cart" className="mobile-nav-link" onClick={() => setMenuOpen(false)}>Cart</Link>
+          <Link href="/shop" className="mobile-nav-link" onClick={() => setMenuOpen(false)}>
+            🛍️ Shop
+          </Link>
+          <Link href="/ai" className="mobile-nav-link" onClick={() => setMenuOpen(false)}>
+            ✨ AI Grocery
+          </Link>
+          <Link href="/cart" className="mobile-nav-link" onClick={() => setMenuOpen(false)}>
+            <span className="flex items-center justify-between w-full">
+              🛒 Cart
+              {cartCount > 0 && (
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-[11px] font-black text-white">
+                  {cartCount}
+                </span>
+              )}
+            </span>
+          </Link>
+
+          {status === "authenticated" && isAdmin && (
+            <Link href="/admin" className="mobile-nav-link" onClick={() => setMenuOpen(false)}>
+              🚀 Admin Dashboard
+            </Link>
+          )}
+          {status === "authenticated" && (
+            <Link href="/profile" className="mobile-nav-link" onClick={() => setMenuOpen(false)}>
+              👤 My Profile & Addresses
+            </Link>
+          )}
+
+          <div className="dropdown-divider my-2" />
+
           {status === "unauthenticated" && (
             <>
               <button
@@ -156,7 +253,7 @@ export default function Navbar() {
                 Sign in with Google
               </button>
               <Link
-                href="/login"
+                href="/register"
                 className="mobile-nav-link mobile-signin"
                 onClick={() => setMenuOpen(false)}
               >
@@ -165,12 +262,21 @@ export default function Navbar() {
             </>
           )}
           {status === "authenticated" && (
-            <button
-              className="mobile-nav-link mobile-signin"
-              onClick={() => { setMenuOpen(false); signOut({ callbackUrl: "/" }); }}
-            >
-              Sign Out
-            </button>
+            <>
+              {session?.user && (
+                <div className="px-4 py-2">
+                  <p className="text-sm font-semibold text-gray-900">{session.user.name}</p>
+                  <p className="text-xs text-gray-500">{session.user.email}</p>
+                </div>
+              )}
+              <button
+                className="mobile-nav-link mobile-signin"
+                onClick={() => { setMenuOpen(false); signOut({ callbackUrl: "/" }); }}
+              >
+                <LogOut className="h-4 w-4 inline mr-2" />
+                Sign Out
+              </button>
+            </>
           )}
         </nav>
       )}

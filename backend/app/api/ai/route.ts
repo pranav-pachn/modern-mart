@@ -78,11 +78,15 @@ Given a dish, recipe, or meal plan, extract all necessary ingredients into a str
 
 CRITICAL RULES:
 1. Translate regional/Hindi terms to simple, standard English grocery names (e.g., "pyaz" -> "onion", "bhindi" -> "okra", "adrak" -> "ginger").
-2. Use extremely short, generic item names in LOWERCASE ONLY (e.g., "tomato", "paneer", "basmati rice", "milk"). Avoid brand names.
-3. Include realistic quantities (e.g., "500g", "2 pcs", "1 litre", "1 bunch").
-4. ALWAYS include a "suggested" array containing 2-4 optional but highly recommended complementary items that go well with the requested dish.
-5. Format EXACTLY as: { "items": [{ "item": "name", "qty": "quantity" }], "suggested": [{ "item": "name", "qty": "quantity" }] }
-6. Output ONLY valid JSON. No markdown formatting, no backticks, no explanations.`;
+2. Use extremely short, simple grocery item names in LOWERCASE ONLY (e.g., "tomato", "paneer", "basmati rice", "milk"). 
+3. DO NOT use adjectives like "fresh", "organic", "ripe", "chopped", or brand names.
+4. QUANTITY INTELLIGENCE: Calculate quantities intelligently based on the number of people/servings requested (assume 2 people if not specified). 
+   - Base Mapping: "paneer" is 250g per 2 people. 
+   - Scale appropriately (e.g., qty = baseQty * (people / 2)). Apply similar logical scaling for other ingredients.
+   - Use standard units (e.g., "500g", "2 pcs", "1 litre", "1 bunch").
+5. ALWAYS include a "suggested" array containing 2-4 optional but highly recommended complementary items that go well with the requested dish.
+6. Format EXACTLY as: { "items": [{ "item": "name", "qty": "quantity" }], "suggested": [{ "item": "name", "qty": "quantity" }] }
+7. Output ONLY valid JSON. No markdown formatting, no backticks, no explanations.`;
 
     const messages = [
       { role: "system", content: systemPrompt },

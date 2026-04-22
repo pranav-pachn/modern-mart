@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, ChevronRight, Loader2, Minus, Plus, ShoppingBag, XCircle } from "lucide-react";
 import { useCart } from "@/store/cart";
+import { ProductDetailsSkeleton } from "@/components/Skeletons";
 
 type ProductDetails = {
   _id: string;
@@ -53,11 +54,14 @@ export default function ProductDetailsPage() {
 
   if (isLoading) {
     return (
-      <main className="lp-root bg-white min-h-screen flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4 text-emerald-600">
-          <Loader2 className="h-8 w-8 animate-spin" />
-          <p className="font-semibold">Loading product details...</p>
+      <main className="lp-root bg-white min-h-screen pb-24">
+        {/* Breadcrumb nav skeleton */}
+        <div className="bg-gray-50 border-b border-gray-100">
+          <div className="lp-section-inner py-4">
+            <div className="h-4 w-48 rounded-md bg-gray-100 animate-pulse" />
+          </div>
         </div>
+        <ProductDetailsSkeleton />
       </main>
     );
   }

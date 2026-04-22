@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingBag, Check, AlertTriangle } from "lucide-react";
+import { ShoppingBag, Check, AlertTriangle, Minus, Plus } from "lucide-react";
 import { useCart } from "@/store/cart";
+import toast from "react-hot-toast";
 
 export type CartProduct = {
   id: string;
@@ -45,12 +46,16 @@ export default function ProductCard({
   onAddToCart,
   actionLabel = "Add to Cart",
 }: ProductCardProps) {
-  const { addToCart } = useCart();
+  const { cart, addToCart, increaseQuantity, decreaseQuantity } = useCart();
   const imageSrc = resolveImageSrc(product.image);
   const isAdded = actionLabel.toLowerCase() === "added";
   const productId = product._id ?? product.id ?? "";
   const inStock = product.stock === undefined || product.stock > 0;
   const lowStock = product.stock !== undefined && product.stock > 0 && product.stock < 5;
+
+  const cartItem = cart.find((c) => c.id === productId);
+  const quantityInCart = cartItem?.quantity || 0;
+  const maxReached = product.stock !== undefined && quantityInCart >= product.stock;
 
   const handleAddClick = () => {
     if (!inStock) return;
@@ -69,6 +74,7 @@ export default function ProductCard({
       stock: product.stock,
     };
     addToCart(cartProduct);
+    toast.success(`${product.name} added to cart`);
   };
 
   return (
@@ -110,24 +116,61 @@ export default function ProductCard({
         <div className="mt-auto pt-3 flex items-center justify-between gap-2">
           <p className="text-lg font-extrabold text-gray-900">₹{product.price}</p>
 
-          <button
-            type="button"
-            onClick={handleAddClick}
-            disabled={!inStock}
-            className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-all duration-200 ${
-              !inStock
-                ? "cursor-not-allowed bg-gray-100 text-gray-400"
-                : isAdded
-                ? "bg-emerald-500 text-white scale-95"
-                : "bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95 shadow-sm"
-            }`}
-          >
-            {isAdded ? (
-              <><Check className="h-3.5 w-3.5" /> Added</>
-            ) : (
-              <><ShoppingBag className="h-3.5 w-3.5" /> Add</>
-            )}
-          </button>
+          {!inStock ? (
+            <button
+              type="button"
+              disabled
+              className="flex items-center gap-1.5 rounded-xl bg-gray-100 px-3 py-2 text-xs font-bold text-gray-400 cursor-not-allowed"
+            >
+              Add
+            </button>
+          ) : cartItem ? (
+            <div className="flex h-9 items-center justify-between rounded-xl border border-emerald-600 bg-white overflow-hidden w-[90px]">
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (cartItem && cartItem.quantity <= 1) {
+                    toast("Removed from cart", { icon: "🗑️" });
+                  }
+                  decreaseQuantity(productId);
+                }}
+                className="flex h-full w-8 items-center justify-center transition hover:bg-emerald-50 text-emerald-700"
+              >
+                <Minus className="h-3 w-3" />
+              </button>
+              <div className="flex flex-col items-center justify-center">
+                <span className="text-xs font-bold text-gray-900">{cartItem.quantity}</span>
+              </div>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (!maxReached) increaseQuantity(productId);
+                }}
+                disabled={maxReached}
+                className={`flex h-full w-8 items-center justify-center transition ${
+                  maxReached ? "text-gray-300 bg-gray-50 cursor-not-allowed" : "hover:bg-emerald-50 text-emerald-700"
+                }`}
+              >
+                <Plus className="h-3 w-3" />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={handleAddClick}
+              className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-all duration-200 ${
+                isAdded
+                  ? "bg-emerald-500 text-white scale-95"
+                  : "bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95 shadow-sm"
+              }`}
+            >
+              {isAdded ? (
+                <><Check className="h-3.5 w-3.5" /> Added</>
+              ) : (
+                <><ShoppingBag className="h-3.5 w-3.5" /> Add</>
+              )}
+            </button>
+          )}
         </div>
       </div>
     </div>
