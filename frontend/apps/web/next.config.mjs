@@ -28,6 +28,12 @@ const nextConfig = {
         destination: process.env.PRODUCTS_API_URL ?? "http://localhost:3001/api/products",
       },
       {
+        source: "/api/orders/analytics",
+        destination: process.env.ORDERS_API_URL
+          ? `${process.env.ORDERS_API_URL}/analytics`
+          : "http://localhost:3001/api/orders/analytics",
+      },
+      {
         source: "/api/orders/:path*",
         destination: process.env.ORDERS_API_URL 
           ? `${process.env.ORDERS_API_URL}/:path*` 

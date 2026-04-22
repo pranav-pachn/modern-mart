@@ -41,7 +41,8 @@ export default function AdminOrders() {
       try {
         const res = await adminFetch("/api/orders");
         if (!res.ok) throw new Error("fetch failed");
-        setOrders(await res.json());
+        const data = await res.json();
+        setOrders(Array.isArray(data) ? data : (data.orders || []));
       } catch {
         setError(true);
       } finally {
