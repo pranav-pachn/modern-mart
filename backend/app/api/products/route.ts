@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
 };
 
@@ -71,14 +71,14 @@ export async function GET(request: Request) {
   }
 }
 
-import { Int32 } from "mongodb";
+import { ObjectId, Int32 } from "mongodb";
 import { z } from "zod";
 
 const productSchema = z.object({
   name: z.string().min(1, "Name is required"),
   price: z.number().nonnegative("Price must be a positive number"),
   category: z.string().min(1, "Category is required"),
-  image: z.string().url("Image must be a valid URL").or(z.literal("")),
+  image: z.string().or(z.literal("")),
   stock: z.number().int().nonnegative().optional().default(0),
 });
 
@@ -98,17 +98,23 @@ export async function POST(req: Request) {
     const db = client.db();
 
     const now = new Date();
-    const productToInsert = {
+    const newId = new ObjectId();
+
+    const { processImageUpload } = await import("@/lib/image-helper");
+    const finalImagePath = await processImageUpload(parsed.data.image, newId.toHexString());
+
+    const productToInsert: ProductDocument = {
+      _id: newId,
       name: parsed.data.name,
       price: parsed.data.price,
       category: parsed.data.category,
-      image: parsed.data.image,
+      image: finalImagePath,
       stock: new Int32(parsed.data.stock),
       createdAt: now,
       updatedAt: now,
     };
 
-    const result = await db.collection("products").insertOne(productToInsert);
+    const result = await db.collection<ProductDocument>(PRODUCTS_COLLECTION).insertOne(productToInsert);
 
     return NextResponse.json(result);
   } catch (error) {

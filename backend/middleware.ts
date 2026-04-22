@@ -58,11 +58,14 @@ export async function middleware(req: NextRequest) {
   }
 
   if (requiresAdmin) {
-    // Look for the auth token
+    const isProduction = process.env.NODE_ENV === "production";
+    const cookieName = isProduction ? "__Secure-authjs.session-token" : "authjs.session-token";
+
     const token = await getToken({ 
       req, 
       secret: process.env.AUTH_SECRET,
-      secureCookie: process.env.NODE_ENV === "production"
+      cookieName: cookieName,
+      secureCookie: isProduction
     });
 
     if (!token || token.role !== "admin") {
@@ -78,6 +81,7 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
+    "/api/products",
     "/api/products/:path*",
     "/api/orders/update",
     "/api/ai/:path*"

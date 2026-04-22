@@ -4,17 +4,17 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, ChevronRight, Loader2, Minus, Plus, ShoppingBag, XCircle } from "lucide-react";
-import { useCart, type CartProduct } from "@/store/cart";
+import { useCart } from "@/store/cart";
 
 type ProductDetails = {
   _id: string;
   name: string;
   category: string;
-  unit: string;
   price: number;
-  rating: number;
   image?: string;
   stock?: number;
+  description?: string;
+  unit?: string;
 };
 
 export default function ProductDetailsPage() {
@@ -46,9 +46,9 @@ export default function ProductDetailsPage() {
 
   const cartItem = product ? cart.find((c) => c.id === product._id) : undefined;
   
-  // Basic image resolution (same as ProductCard logic)
-  const imageSrc = product?.image && /^(https?:\/\/|data:|blob:)/i.test(product.image) 
-    ? product.image 
+  // Accept fully qualified remote URLs, data URLs, blob URLs, AND local /products/ paths
+  const imageSrc = product?.image && /^(https?:\/\/|data:|blob:|\/)/.test(product.image)
+    ? product.image
     : "/products/placeholder.svg";
 
   if (isLoading) {
@@ -83,7 +83,16 @@ export default function ProductDetailsPage() {
 
   const handleAddToCart = () => {
     if (!product || isOutOfStock) return;
-    const cartProduct: CartProduct = { ...product, id: product._id };
+    const cartProduct = {
+      id: product._id,
+      name: product.name,
+      category: product.category,
+      unit: product.unit ?? "1 item",
+      price: product.price,
+      rating: 4.5,
+      image: product.image,
+      stock: product.stock,
+    };
     addToCart(cartProduct);
   };
 
@@ -127,7 +136,7 @@ export default function ProductDetailsPage() {
           
           <div className="flex items-end gap-3 mb-6">
             <p className="text-4xl font-extrabold text-gray-900">₹{product.price}</p>
-            <p className="text-gray-500 font-semibold mb-1">/ {product.unit || "item"}</p>
+            {product.unit && <p className="text-gray-500 font-semibold mb-1">/ {product.unit}</p>}
           </div>
 
           {/* Stock Badges */}

@@ -1,5 +1,19 @@
-import { useCart } from "@/store/cart";
+"use client";
+
 import Link from "next/link";
+import { ShoppingBag, Check, AlertTriangle } from "lucide-react";
+import { useCart } from "@/store/cart";
+
+export type CartProduct = {
+  id: string;
+  name: string;
+  category: string;
+  unit: string;
+  price: number;
+  rating: number;
+  image?: string;
+  stock?: number;
+};
 
 type ProductLike = {
   _id?: string;
@@ -8,6 +22,9 @@ type ProductLike = {
   price: number;
   category?: string;
   image?: string;
+  stock?: number;
+  unit?: string;
+  rating?: number;
 };
 
 type ProductCardProps = {
@@ -17,15 +34,9 @@ type ProductCardProps = {
 };
 
 function resolveImageSrc(image?: string): string {
-  if (!image) {
-    return "/products/placeholder.svg";
-  }
-
-  // Keep fully qualified remote/data URLs, but avoid broken local filename paths.
-  if (/^(https?:\/\/|data:|blob:)/i.test(image)) {
-    return image;
-  }
-
+  if (!image) return "/products/placeholder.svg";
+  // Accept fully qualified remote URLs, data URLs, blob URLs, AND relative paths (e.g. /products/...)
+  if (/^(https?:\/\/|data:|blob:|\/)/i.test(image)) return image;
   return "/products/placeholder.svg";
 }
 
@@ -37,51 +48,85 @@ export default function ProductCard({
   const { addToCart } = useCart();
   const imageSrc = resolveImageSrc(product.image);
   const isAdded = actionLabel.toLowerCase() === "added";
-  
-  const productId = product._id || product.id || "";
+  const productId = product._id ?? product.id ?? "";
+  const inStock = product.stock === undefined || product.stock > 0;
+  const lowStock = product.stock !== undefined && product.stock > 0 && product.stock < 5;
 
-  const handleAddClick = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const handleAddClick = () => {
+    if (!inStock) return;
     if (onAddToCart) {
       onAddToCart();
       return;
     }
-
-    addToCart(product as any);
+    const cartProduct: CartProduct = {
+      id: productId,
+      name: product.name,
+      category: product.category ?? "General",
+      unit: product.unit ?? "1 item",
+      price: product.price,
+      rating: product.rating ?? 4.5,
+      image: product.image,
+      stock: product.stock,
+    };
+    addToCart(cartProduct);
   };
 
   return (
-    <div className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-gray-200 bg-white transition-all duration-200 hover:-translate-y-1 hover:border-emerald-200 hover:shadow-lg">
-      <Link href={productId ? `/product/${productId}` : "#"} className="aspect-square w-full overflow-hidden bg-gray-50 relative block">
-        <img src={imageSrc} alt={product.name} loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+    <div className="group relative flex flex-col rounded-2xl border border-gray-100 bg-white shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden">
+      {/* Image area — clickable → detail page */}
+      <Link href={`/product/${productId}`} className="block relative aspect-square bg-gray-50 overflow-hidden">
+        <img
+          src={imageSrc}
+          alt={product.name}
+          className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-500 mix-blend-multiply"
+        />
+        {/* Stock badge */}
+        {!inStock && (
+          <span className="absolute top-3 left-3 flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-1 text-[11px] font-bold text-red-600">
+            Out of stock
+          </span>
+        )}
+        {lowStock && (
+          <span className="absolute top-3 left-3 flex items-center gap-1 rounded-full bg-orange-100 px-2.5 py-1 text-[11px] font-bold text-orange-600">
+            <AlertTriangle className="h-3 w-3" /> Only {product.stock} left
+          </span>
+        )}
       </Link>
 
-      <div className="flex flex-1 flex-col p-5">
-        <div className="mb-4">
-          {product.category && (
-            <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-emerald-600">
-              {product.category}
-            </span>
-          )}
-          <Link href={productId ? `/product/${productId}` : "#"}>
-            <h3 className="line-clamp-2 font-bold text-gray-900 text-base leading-tight hover:text-emerald-600 transition">
-              {product.name}
-            </h3>
-          </Link>
-        </div>
+      {/* Info */}
+      <div className="flex flex-1 flex-col gap-1.5 p-4 pt-3">
+        {product.category && (
+          <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600">
+            {product.category}
+          </span>
+        )}
+        <Link
+          href={`/product/${productId}`}
+          className="text-sm font-bold text-gray-900 leading-snug line-clamp-2 hover:text-emerald-700 transition-colors"
+        >
+          {product.name}
+        </Link>
 
-        <div className="mt-auto flex items-center justify-between gap-3">
-          <p className="text-lg font-black text-gray-900">₹{product.price}</p>
+        <div className="mt-auto pt-3 flex items-center justify-between gap-2">
+          <p className="text-lg font-extrabold text-gray-900">₹{product.price}</p>
+
           <button
             type="button"
             onClick={handleAddClick}
-            className={`flex items-center justify-center rounded-xl px-4 py-2 text-sm font-bold transition-all ${
-              isAdded
-                ? "bg-emerald-50 text-emerald-700 pointer-events-none"
-                : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm"
+            disabled={!inStock}
+            className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-all duration-200 ${
+              !inStock
+                ? "cursor-not-allowed bg-gray-100 text-gray-400"
+                : isAdded
+                ? "bg-emerald-500 text-white scale-95"
+                : "bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95 shadow-sm"
             }`}
           >
-            {isAdded ? "Added ✓" : "Add"}
+            {isAdded ? (
+              <><Check className="h-3.5 w-3.5" /> Added</>
+            ) : (
+              <><ShoppingBag className="h-3.5 w-3.5" /> Add</>
+            )}
           </button>
         </div>
       </div>

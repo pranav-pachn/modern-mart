@@ -59,7 +59,7 @@ export default function CheckoutPage() {
     }));
   };
 
-  const handlePayment = async (formData: FormData) => {
+  const handlePayment = async (orderId: string) => {
     try {
       const res = await fetch("/api/payment", {
         method: "POST",
@@ -80,11 +80,26 @@ export default function CheckoutPage() {
         name: "Grocery Mart",
         order_id: data.id,
         handler: async function (response: any) {
-          await submitOrder(formData, {
-            razorpay_order_id: response.razorpay_order_id,
-            razorpay_payment_id: response.razorpay_payment_id,
-            razorpay_signature: response.razorpay_signature,
-          });
+          try {
+            const verifyRes = await fetch("/api/payment/verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                orderId,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+
+            if (!verifyRes.ok) throw new Error("Payment verification failed");
+
+            clearCart();
+            router.push("/order-success");
+          } catch (err) {
+            setStatusMessage("Payment verification failed. Please contact support.");
+            setIsSubmitting(false);
+          }
         },
       };
 
@@ -102,7 +117,7 @@ export default function CheckoutPage() {
     }
   };
 
-  const submitOrder = async (formData: FormData | null, rzpDetails?: any) => {
+  const submitOrder = async (formData: FormData | null): Promise<string | null> => {
     const userName = formData?.get("name") as string ?? deliveryDetails.userName;
     const phone = formData?.get("phone") as string ?? deliveryDetails.phone;
     const address = formData?.get("address") as string ?? deliveryDetails.address;
@@ -115,8 +130,8 @@ export default function CheckoutPage() {
           body: JSON.stringify({
             label: addressLabel,
             addressLine: address,
-            city: "Bodhan", // Default for this app context
-            pincode: "503185", // Default placeholder
+            city: "Bodhan", 
+            pincode: "503185",
           }),
         });
       } catch (err) {
@@ -136,7 +151,6 @@ export default function CheckoutPage() {
       })),
       total: Number(total),
       paymentMethod,
-      ...(rzpDetails || {}),
     };
 
     try {
@@ -151,13 +165,13 @@ export default function CheckoutPage() {
         throw new Error(errorBody?.error ?? "Order request failed");
       }
 
-      clearCart();
-      router.push("/order-success");
+      const resData = await response.json();
+      return resData.orderId;
     } catch (error) {
       const message = error instanceof Error ? error.message : "We could not place your order. Please try again.";
       setStatusMessage(message);
-    } finally {
       setIsSubmitting(false);
+      return null;
     }
   };
 
@@ -173,12 +187,17 @@ export default function CheckoutPage() {
     setIsSubmitting(true);
     setStatusMessage("");
 
+    const orderId = await submitOrder(formData);
+    if (!orderId) return;
+
     if (paymentMethod === "online") {
-      await handlePayment(formData);
+      await handlePayment(orderId);
       return;
     }
 
-    await submitOrder(formData);
+    // For COD
+    clearCart();
+    router.push("/order-success");
   };
 
   return (

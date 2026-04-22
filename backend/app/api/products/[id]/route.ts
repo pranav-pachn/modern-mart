@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { ObjectId, Int32 } from "mongodb";
 import clientPromise from "@/lib/mongodb";
-import { PRODUCTS_COLLECTION } from "@/models/Product";
+import { PRODUCTS_COLLECTION, type ProductDocument } from "@/models/Product";
 
 export const runtime = "nodejs";
 
@@ -25,7 +25,7 @@ export async function GET(req: Request, context: { params: any }) {
     const client = await clientPromise;
     const db = client.db();
 
-    const product = await db.collection(PRODUCTS_COLLECTION).findOne({
+    const product = await db.collection<ProductDocument>(PRODUCTS_COLLECTION).findOne({
       _id: new ObjectId(id),
     });
 
@@ -52,16 +52,19 @@ export async function PUT(req: Request, context: { params: any }) {
     const client = await clientPromise;
     const db = client.db();
 
+    const { processImageUpload } = await import("@/lib/image-helper");
+    const finalImagePath = await processImageUpload(String(body.image), id);
+
     const productToUpdate = {
       name: String(body.name),
       price: Number(body.price),
       category: String(body.category),
-      image: String(body.image),
+      image: finalImagePath,
       stock: new Int32(Number(body.stock || 0)),
       updatedAt: new Date(),
     };
 
-    const result = await db.collection(PRODUCTS_COLLECTION).updateOne(
+    const result = await db.collection<ProductDocument>(PRODUCTS_COLLECTION).updateOne(
       { _id: new ObjectId(id) },
       { $set: productToUpdate }
     );
@@ -83,7 +86,7 @@ export async function DELETE(req: Request, context: { params: any }) {
     const client = await clientPromise;
     const db = client.db();
 
-    const result = await db.collection(PRODUCTS_COLLECTION).deleteOne({
+    const result = await db.collection<ProductDocument>(PRODUCTS_COLLECTION).deleteOne({
       _id: new ObjectId(id),
     });
 

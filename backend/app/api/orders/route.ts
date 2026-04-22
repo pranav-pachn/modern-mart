@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
-import crypto from "crypto";
 import clientPromise from "@/lib/mongodb";
 import { ORDERS_COLLECTION, type OrderDocument, type OrderItem } from "@/models/Order";
 import { PRODUCTS_COLLECTION, type ProductDocument } from "@/models/Product";
@@ -10,7 +9,7 @@ export const runtime = "nodejs";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
 };
 
@@ -35,10 +34,6 @@ const orderSchema = z.object({
   items: z.array(orderItemSchema).min(1, "At least one item is required"),
   total: z.number().nonnegative("Total is required"),
   paymentMethod: z.enum(["COD", "ONLINE"]).default("COD"),
-  paymentId: z.string().optional(),
-  razorpay_order_id: z.string().optional(),
-  razorpay_payment_id: z.string().optional(),
-  razorpay_signature: z.string().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -63,41 +58,9 @@ export async function POST(request: NextRequest) {
       items,
       total,
       paymentMethod,
-      razorpay_order_id,
-      razorpay_payment_id,
-      razorpay_signature,
     } = parsed.data;
 
-    let paymentStatus = "pending";
-    let finalPaymentId = parsed.data.paymentId;
-
-    if (paymentMethod === "ONLINE") {
-      if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-        return jsonWithCors({ error: "Missing Razorpay payment verification details." }, 400);
-      }
-
-      const secret = process.env.RAZORPAY_KEY_SECRET;
-      if (!secret) {
-        return jsonWithCors({ error: "Server missing Razorpay secret" }, 500);
-      }
-
-      const expectedSignature = crypto
-        .createHmac("sha256", secret)
-        .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-        .digest("hex");
-
-      const isValid = crypto.timingSafeEqual(
-        Buffer.from(expectedSignature, "hex"),
-        Buffer.from(razorpay_signature, "hex")
-      );
-
-      if (!isValid) {
-        return jsonWithCors({ error: "Payment verification failed. Signature mismatch." }, 400);
-      }
-
-      finalPaymentId = razorpay_payment_id;
-      paymentStatus = "success";
-    }
+    const paymentStatus = "pending";
 
     const order: OrderDocument = {
       userName,
@@ -111,9 +74,6 @@ export async function POST(request: NextRequest) {
       createdAt: new Date(),
     };
 
-    if (finalPaymentId) {
-      order.paymentId = finalPaymentId;
-    }
 
     const client = await clientPromise;
     const db = client.db();
@@ -167,7 +127,7 @@ export async function GET() {
   const client = await clientPromise;
   const db = client.db();
 
-  const orders = await db.collection("orders").find().toArray();
+  const orders = await db.collection<OrderDocument>(ORDERS_COLLECTION).find().toArray();
 
   return NextResponse.json(orders);
 }

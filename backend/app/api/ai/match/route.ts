@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import clientPromise from "@/lib/mongodb";
+import { PRODUCTS_COLLECTION, type ProductDocument } from "@/models/Product";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -26,7 +27,7 @@ export async function POST(req: Request) {
     const db = client.db();
 
     // Fetch all products for in-memory fuzzy matching
-    const products = await db.collection("products").find().toArray();
+    const products = await db.collection<ProductDocument>(PRODUCTS_COLLECTION).find().toArray();
 
     const matchedItems = items.map((li: any) => {
       const queryText = (li.item || "").toLowerCase().trim();
@@ -67,9 +68,9 @@ export async function POST(req: Request) {
             id: String(bestProduct._id),
             name: bestProduct.name,
             category: bestProduct.category ?? "",
-            unit: bestProduct.unit ?? "1 item",
+            unit: "1 item",
             price: bestProduct.price,
-            rating: bestProduct.rating ?? 4.5,
+            rating: 4.5,
             image: bestProduct.image ?? undefined,
             stock: bestProduct.stock ?? undefined,
           }

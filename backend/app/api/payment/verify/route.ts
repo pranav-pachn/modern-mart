@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
+import { ObjectId } from "mongodb";
+import clientPromise from "@/lib/mongodb";
+import { ORDERS_COLLECTION } from "@/models/Order";
 
 export const runtime = "nodejs";
 
@@ -15,10 +18,10 @@ export async function OPTIONS() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
+    const { orderId, razorpay_order_id, razorpay_payment_id, razorpay_signature } =
       await request.json();
 
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+    if (!orderId || !razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return NextResponse.json(
         { error: "Missing payment verification fields." },
         { status: 400, headers: corsHeaders }
@@ -44,6 +47,14 @@ export async function POST(request: NextRequest) {
         { status: 400, headers: corsHeaders }
       );
     }
+
+    const client = await clientPromise;
+    await client.db()
+      .collection(ORDERS_COLLECTION)
+      .updateOne(
+        { _id: new ObjectId(orderId) },
+        { $set: { paymentStatus: "success", paymentId: razorpay_payment_id } }
+      );
 
     return NextResponse.json({ verified: true }, { status: 200, headers: corsHeaders });
   } catch (error) {

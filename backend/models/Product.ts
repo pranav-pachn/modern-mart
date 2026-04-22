@@ -1,4 +1,4 @@
-import type { ObjectId } from "mongodb";
+import type { ObjectId, Int32 } from "mongodb";
 
 export const PRODUCTS_COLLECTION = "products";
 
@@ -8,7 +8,9 @@ export type ProductDocument = {
   price: number;
   category: string;
   image: string;
-  stock: number;
+  stock: Int32 | number;
+  createdAt?: Date;
+  updatedAt?: Date;
 };
 
 export const productValidator = {
@@ -39,6 +41,12 @@ export const productValidator = {
       stock: {
         bsonType: ["int", "long"],
         minimum: 0,
+      },
+      createdAt: {
+        bsonType: "date",
+      },
+      updatedAt: {
+        bsonType: "date",
       },
     },
   },
