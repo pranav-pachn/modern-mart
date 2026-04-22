@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { adminFetch } from "@/lib/admin-fetch";
 import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import { Badge } from "@workspace/ui/components/badge";
 import { ChevronRight } from "lucide-react";
@@ -38,7 +39,7 @@ export default function AdminOrders() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch("/api/orders");
+        const res = await adminFetch("/api/orders");
         if (!res.ok) throw new Error("fetch failed");
         setOrders(await res.json());
       } catch {

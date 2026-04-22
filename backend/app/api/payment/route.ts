@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import Razorpay from "razorpay";
+import { rateLimit } from "@/lib/api-guard";
 
 export const runtime = "nodejs";
 
@@ -9,31 +11,60 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type",
 };
 
+// ── Zod schema ────────────────────────────────────────────────────────────────
+const paymentSchema = z.object({
+  // Amount is in INR (rupees). Cap at ₹1,00,000 to prevent abuse.
+  amount: z
+    .number({ invalid_type_error: "Amount must be a number" })
+    .positive("Amount must be positive")
+    .max(100_000, "Amount exceeds maximum allowed value"),
+});
+
 export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 204,
-    headers: corsHeaders,
-  });
+  return new NextResponse(null, { status: 204, headers: corsHeaders });
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    const { amount } = await request.json();
+  // Rate-limit payment creation to 10/min per IP
+  const limited = rateLimit(request, { limit: 10, windowMs: 60_000 });
+  if (limited) return limited;
 
-    if (typeof amount !== "number" || amount <= 0) {
+  try {
+    let rawBody: unknown;
+    try {
+      rawBody = await request.json();
+    } catch {
       return NextResponse.json(
-        { error: "Valid amount is required" },
+        { error: "Invalid JSON body" },
         { status: 400, headers: corsHeaders }
       );
     }
 
-    const razorpay = new Razorpay({
-      key_id: process.env.RAZORPAY_KEY_ID!,
-      key_secret: process.env.RAZORPAY_KEY_SECRET!,
-    });
+    const parsed = paymentSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Validation failed", details: parsed.error.flatten().fieldErrors },
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
+    const { amount } = parsed.data;
+
+    const keyId     = process.env.RAZORPAY_KEY_ID;
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+
+    if (!keyId || !keySecret) {
+      console.error("[payment] Razorpay keys are not configured.");
+      return NextResponse.json(
+        { error: "Payment service is not configured." },
+        { status: 503, headers: corsHeaders }
+      );
+    }
+
+    const razorpay = new Razorpay({ key_id: keyId, key_secret: keySecret });
 
     const order = await razorpay.orders.create({
-      amount: amount * 100,
+      amount: Math.round(amount * 100), // paise
       currency: "INR",
     });
 

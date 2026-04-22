@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { adminFetch } from "@/lib/admin-fetch";
 import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import { ShoppingCart, Package, TrendingUp, Clock } from "lucide-react";
 
@@ -14,8 +15,8 @@ export default function AdminDashboard() {
       try {
         // Use targeted, lean endpoints instead of fetching full collections
         const [statsRes, productsRes] = await Promise.all([
-          fetch("/api/orders?stats=1"),
-          fetch("/api/products?page=1&limit=1"),
+          adminFetch("/api/orders?stats=1"),
+          adminFetch("/api/products?page=1&limit=1"),
         ]);
         if (!statsRes.ok || !productsRes.ok) throw new Error("fetch failed");
 

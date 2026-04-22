@@ -4,6 +4,7 @@ import clientPromise from "@/lib/mongodb";
 import { ORDERS_COLLECTION, type OrderDocument, type OrderItem } from "@/models/Order";
 import { PRODUCTS_COLLECTION, type ProductDocument } from "@/models/Product";
 import { z } from "zod";
+import { requireAdminToken, rateLimit } from "@/lib/api-guard";
 
 export const runtime = "nodejs";
 
@@ -124,6 +125,13 @@ function jsonWithCors(body: unknown, status: number) {
 }
 
 export async function GET(request: NextRequest) {
+  // Protect all order data — admin only
+  const authError = requireAdminToken(request);
+  if (authError) return authError;
+
+  const limited = rateLimit(request, { limit: 30, windowMs: 60_000 });
+  if (limited) return limited;
+
   const client = await clientPromise;
   const db = client.db();
   const col = db.collection<OrderDocument>(ORDERS_COLLECTION);

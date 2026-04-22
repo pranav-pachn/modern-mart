@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { adminFetch } from "@/lib/admin-fetch";
 import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import { Badge } from "@workspace/ui/components/badge";
 import { Pencil, Trash2, X, Check, ToggleLeft, ToggleRight, ChevronLeft, ChevronRight } from "lucide-react";
@@ -9,9 +10,10 @@ import Link from "next/link";
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 async function patchProduct(id: string, fields: Record<string, unknown>) {
-  return fetch(`/api/products/${id}`, {
+  return adminFetch(`/api/products/${id}`, {
     method: "PUT",
     body: JSON.stringify(fields),
+    headers: { "Content-Type": "application/json" },
   });
 }
 
@@ -119,7 +121,7 @@ export default function AdminProducts() {
     try {
       setIsLoading(true);
       setLoadError(false);
-      const res = await fetch(`/api/products?page=${p}&limit=${LIMIT}`);
+      const res = await adminFetch(`/api/products?page=${p}&limit=${LIMIT}`);
       if (!res.ok) throw new Error("fetch failed");
       const data = await res.json();
       if (Array.isArray(data)) {
@@ -141,7 +143,7 @@ export default function AdminProducts() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this product permanently?")) return;
-    const res = await fetch(`/api/products/${id}`, { method: "DELETE" });
+    const res = await adminFetch(`/api/products/${id}`, { method: "DELETE" });
     if (res.ok) setProducts((p) => p.filter((x) => x._id !== id));
     else alert("Failed to delete.");
   };

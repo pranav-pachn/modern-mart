@@ -1,6 +1,18 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import clientPromise from "@/lib/mongodb";
 import { PRODUCTS_COLLECTION, type ProductDocument } from "@/models/Product";
+import { rateLimit } from "@/lib/api-guard";
+
+// ── Zod schema for incoming items ─────────────────────────────────────────────
+const matchItemSchema = z.object({
+  item: z.string().min(1).max(200).trim(),
+  qty:  z.string().max(50).optional().default("1"),
+});
+
+const matchRequestSchema = z.object({
+  items: z.array(matchItemSchema).min(1, "At least one item is required").max(50, "Maximum 50 items per request"),
+});
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -62,13 +74,31 @@ function scoreMatch(
   return score;
 }
 
-export async function POST(req: Request) {
-  try {
-    const { items } = await req.json();
+export async function POST(req: NextRequest) {
+  // Rate-limit AI matching to 20 requests/min per IP
+  const limited = rateLimit(req, { limit: 20, windowMs: 60_000 });
+  if (limited) return limited;
 
-    if (!Array.isArray(items) || items.length === 0) {
-      return NextResponse.json([], { headers: corsHeaders });
+  try {
+    let rawBody: unknown;
+    try {
+      rawBody = await req.json();
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid JSON body" },
+        { status: 400, headers: corsHeaders }
+      );
     }
+
+    const parsed = matchRequestSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Validation failed", details: parsed.error.flatten().fieldErrors },
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
+    const { items } = parsed.data;
 
     const client = await clientPromise;
     const db = client.db();
