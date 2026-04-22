@@ -3,6 +3,7 @@
 import { FormEvent, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Script from "next/script";
+import { Loader2, AlertCircle } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useCart } from "@/store/cart";
 
@@ -375,12 +376,25 @@ export default function CheckoutPage() {
               disabled={isSubmitting || items.length === 0}
               className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-emerald-600 px-5 text-sm font-semibold text-white transition hover:bg-emerald-700 sm:w-auto"
             >
-              {isSubmitting ? "Placing order..." : "Place order"}
+              {isSubmitting ? (
+                <><Loader2 className="h-4 w-4 animate-spin" /> Placing order...</>
+              ) : "Place order"}
             </button>
 
-            {statusMessage ? (
-              <p className="text-sm font-medium text-red-600">{statusMessage}</p>
-            ) : null}
+            {statusMessage && (
+              <div role="alert" className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+                <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
+                <p className="text-sm font-medium text-red-700 flex-1">{statusMessage}</p>
+                <button
+                  type="button"
+                  onClick={() => setStatusMessage("")}
+                  className="text-red-400 hover:text-red-600 text-xs font-bold leading-none"
+                  aria-label="Dismiss"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
           </form>
         </section>
 

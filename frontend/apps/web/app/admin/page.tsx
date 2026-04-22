@@ -7,6 +7,7 @@ import { ShoppingCart, Package, TrendingUp, Clock } from "lucide-react";
 export default function AdminDashboard() {
   const [stats, setStats] = useState({ totalOrders: 0, todaysOrders: 0, totalProducts: 0, revenue: 0, pending: 0 });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -15,14 +16,13 @@ export default function AdminDashboard() {
           fetch("/api/orders"),
           fetch("/api/products"),
         ]);
-        const orders = ordersRes.ok ? await ordersRes.json() : [];
+        if (!ordersRes.ok || !productsRes.ok) throw new Error("fetch failed");
+        const orders = await ordersRes.json();
         let productsCount = 0;
-        if (productsRes.ok) {
-          const productsData = await productsRes.json();
-          productsCount = typeof productsData.total === "number" 
-            ? productsData.total 
-            : (Array.isArray(productsData) ? productsData.length : (productsData.products?.length || 0));
-        }
+        const productsData = await productsRes.json();
+        productsCount = typeof productsData.total === "number"
+          ? productsData.total
+          : (Array.isArray(productsData) ? productsData.length : (productsData.products?.length || 0));
 
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -36,6 +36,8 @@ export default function AdminDashboard() {
             !o.status || ["pending", "placed"].includes(o.status.toLowerCase())
           ).length,
         });
+      } catch {
+        setError(true);
       } finally {
         setLoading(false);
       }
@@ -62,22 +64,33 @@ export default function AdminDashboard() {
           return (
             <Card key={c.title} className="shadow-none border border-gray-200">
               <CardHeader className="pb-2">
-                <div className={`w-9 h-9 rounded-lg ${c.bg} flex items-center justify-center mb-2`}>
-                  <Icon className={`w-4 h-4 ${c.color}`} />
+                <div className={`w-9 h-9 rounded-lg ${loading ? "bg-gray-100" : c.bg} flex items-center justify-center mb-2 transition-colors`}>
+                  {loading ? <div className="w-4 h-4 rounded bg-gray-200 animate-pulse" /> : <Icon className={`w-4 h-4 ${c.color}`} />}
                 </div>
                 <CardTitle className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   {c.title}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className={`text-2xl font-bold ${c.color}`}>
-                  {loading ? "—" : c.value}
-                </p>
+                {loading ? (
+                  <div className="h-8 w-20 rounded-lg bg-gray-100 animate-pulse" />
+                ) : error ? (
+                  <p className="text-lg font-bold text-red-400">—</p>
+                ) : (
+                  <p className={`text-2xl font-bold ${c.color}`}>{c.value}</p>
+                )}
               </CardContent>
             </Card>
           );
         })}
       </div>
+
+      {error && (
+        <div className="mb-6 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 font-medium">
+          <span className="text-lg">⚠️</span>
+          Could not load dashboard data. Check your backend connection and try refreshing.
+        </div>
+      )}
 
       <Card className="shadow-none border border-gray-200">
         <CardContent className="flex flex-col items-center justify-center py-16 text-center">

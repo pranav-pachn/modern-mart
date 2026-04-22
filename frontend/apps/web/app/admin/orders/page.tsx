@@ -21,6 +21,7 @@ function getStatusMeta(status: string) {
 export default function AdminOrders() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [filter, setFilter] = useState<string>("all");
 
   const TABS = [
@@ -36,9 +37,15 @@ export default function AdminOrders() {
 
   useEffect(() => {
     (async () => {
-      const res = await fetch("/api/orders");
-      if (res.ok) setOrders(await res.json());
-      setLoading(false);
+      try {
+        const res = await fetch("/api/orders");
+        if (!res.ok) throw new Error("fetch failed");
+        setOrders(await res.json());
+      } catch {
+        setError(true);
+      } finally {
+        setLoading(false);
+      }
     })();
   }, []);
 
@@ -82,7 +89,34 @@ export default function AdminOrders() {
       </div>
 
       {loading ? (
-        <p className="text-gray-400 text-sm">Loading orders...</p>
+        <div className="space-y-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="animate-pulse rounded-2xl border border-gray-100 bg-white p-5">
+              <div className="flex items-start justify-between mb-4">
+                <div className="space-y-2">
+                  <div className="h-4 w-32 rounded-full bg-gray-100" />
+                  <div className="h-3 w-24 rounded-full bg-gray-100" />
+                  <div className="h-3 w-40 rounded-full bg-gray-100" />
+                </div>
+                <div className="h-6 w-20 rounded-full bg-gray-100" />
+              </div>
+              <div className="h-16 rounded-lg bg-gray-50 mb-4" />
+              <div className="h-8 w-28 rounded-lg bg-gray-100" />
+            </div>
+          ))}
+        </div>
+      ) : error ? (
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-red-200 bg-red-50 py-16 px-6 text-center">
+          <span className="text-4xl mb-3">⚠️</span>
+          <h3 className="text-base font-bold text-red-700 mb-1">Failed to load orders</h3>
+          <p className="text-sm text-red-500 mb-4">There was a problem connecting to the backend. Please try refreshing.</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 transition"
+          >
+            Retry
+          </button>
+        </div>
       ) : filteredOrders.length === 0 ? (
         <Card className="shadow-none border border-gray-200">
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">

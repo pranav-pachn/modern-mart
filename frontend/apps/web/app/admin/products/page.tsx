@@ -107,6 +107,8 @@ export default function AdminProducts() {
   const [products, setProducts] = useState<any[]>([]);
   const [editingProduct, setEditingProduct] = useState<any | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const LIMIT = 12;
@@ -116,9 +118,11 @@ export default function AdminProducts() {
 
   const loadPage = async (p: number) => {
     try {
+      setIsLoading(true);
+      setLoadError(false);
       const res = await fetch(`/api/products?page=${p}&limit=${LIMIT}`);
+      if (!res.ok) throw new Error("fetch failed");
       const data = await res.json();
-      // Handle both paginated ({products, totalPages}) and legacy flat array responses
       if (Array.isArray(data)) {
         setProducts(data);
         setTotalPages(1);
@@ -127,8 +131,10 @@ export default function AdminProducts() {
         setTotalPages(data.totalPages ?? 1);
       }
       setPage(p);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      setLoadError(true);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -170,7 +176,38 @@ export default function AdminProducts() {
       </div>
 
       {/* ── Product Cards (mobile-first grid) ── */}
-      {products.length === 0 ? (
+      {isLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="animate-pulse rounded-2xl border border-gray-100 bg-white p-4">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-14 h-14 rounded-xl bg-gray-100 shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 w-3/4 rounded-full bg-gray-100" />
+                  <div className="h-3 w-1/2 rounded-full bg-gray-100" />
+                </div>
+              </div>
+              <div className="h-10 rounded-lg bg-gray-50 mb-3" />
+              <div className="flex gap-2">
+                <div className="flex-1 h-9 rounded-xl bg-gray-100" />
+                <div className="flex-1 h-9 rounded-xl bg-gray-100" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : loadError ? (
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-red-200 bg-red-50 py-16 px-6 text-center">
+          <span className="text-4xl mb-3">⚠️</span>
+          <h3 className="text-base font-bold text-red-700 mb-1">Failed to load products</h3>
+          <p className="text-sm text-red-500 mb-4">Check your backend connection and try again.</p>
+          <button
+            onClick={() => loadPage(1)}
+            className="px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 transition"
+          >
+            Retry
+          </button>
+        </div>
+      ) : products.length === 0 ? (
         <Card className="shadow-none border border-gray-200">
           <CardContent className="py-16 text-center text-gray-400 text-sm">
             No products found. Add your first product →
