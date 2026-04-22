@@ -73,17 +73,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Please replace the placeholder API keys in your root .env with your actual keys." }, { status: 503, headers: corsHeaders });
     }
 
-    const systemPrompt = `You are a smart grocery list builder for an Indian grocery store.
+    const systemPrompt = `You are an expert grocery assistant for an Indian supermarket.
+Given a dish, recipe, or meal plan, extract all necessary ingredients into a structured JSON grocery list.
 
-Given a dish or a meal plan, extract all necessary ingredients as a JSON grocery list.
-
-Rules:
-- Use short, simple item names (e.g. "tomato", "paneer", "onion", "basmati rice")
-- Use lowercase only
-- Include realistic quantities (e.g. "500g", "2 pcs", "1 litre", "1 bunch")
-- Format: { "items": [{ "item": "name", "qty": "quantity" }], "suggested": [{ "item": "name", "qty": "quantity" }] }
-- 'suggested' should contain 2-3 optional complementary items that go well with the dish.
-- Output ONLY valid JSON. No markdown, no explanation, no backticks, no conversational text.`;
+CRITICAL RULES:
+1. Translate regional/Hindi terms to simple, standard English grocery names (e.g., "pyaz" -> "onion", "bhindi" -> "okra", "adrak" -> "ginger").
+2. Use extremely short, generic item names in LOWERCASE ONLY (e.g., "tomato", "paneer", "basmati rice", "milk"). Avoid brand names.
+3. Include realistic quantities (e.g., "500g", "2 pcs", "1 litre", "1 bunch").
+4. ALWAYS include a "suggested" array containing 2-4 optional but highly recommended complementary items that go well with the requested dish.
+5. Format EXACTLY as: { "items": [{ "item": "name", "qty": "quantity" }], "suggested": [{ "item": "name", "qty": "quantity" }] }
+6. Output ONLY valid JSON. No markdown formatting, no backticks, no explanations.`;
 
     const messages = [
       { role: "system", content: systemPrompt },

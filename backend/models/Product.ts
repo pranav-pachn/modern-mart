@@ -9,6 +9,8 @@ export type ProductDocument = {
   category: string;
   image: string;
   stock: Int32 | number;
+  description?: string;
+  unit?: string;
   createdAt?: Date;
   updatedAt?: Date;
 };
@@ -41,6 +43,12 @@ export const productValidator = {
       stock: {
         bsonType: ["int", "long"],
         minimum: 0,
+      },
+      description: {
+        bsonType: "string",
+      },
+      unit: {
+        bsonType: "string",
       },
       createdAt: {
         bsonType: "date",

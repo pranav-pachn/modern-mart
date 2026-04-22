@@ -160,7 +160,7 @@ export default function ProductDetailsPage() {
           
           <h3 className="font-bold text-gray-900 text-lg mb-2">Description</h3>
           <p className="text-gray-600 leading-relaxed mb-8">
-            Fresh, high-quality {product.name.toLowerCase()} sourced locally. Perfect for your daily needs and selected with care by Panchavati Mart to ensure the best standard for your family.
+            {product.description || `Fresh, high-quality ${product.name.toLowerCase()} sourced locally. Perfect for your daily needs and selected with care by Panchavati Mart to ensure the best standard for your family.`}
           </p>
 
           {/* Actions */}

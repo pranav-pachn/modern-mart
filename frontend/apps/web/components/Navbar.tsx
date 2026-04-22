@@ -3,11 +3,18 @@
 import Link from "next/link";
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 
 export default function Navbar() {
   const { data: session, status } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const pathname = usePathname();
+
+  // Do not render the global storefront navbar in the admin dashboard
+  if (pathname?.startsWith("/admin")) {
+    return null;
+  }
 
   return (
     <header className="navbar">

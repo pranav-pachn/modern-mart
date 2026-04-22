@@ -68,13 +68,15 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  // ── 4. Admin Redirection from Landing Page ─────────────────────────────────
-  // If an admin is already logged in and hits the landing page, 
-  // they should be automatically redirected back to the admin dashboard.
+  // ── 4. Redirect logged-in users from landing page ───────────────────────
   if (pathname === "/") {
     const token = await getToken({ req, secret: process.env.AUTH_SECRET });
-    if (token?.role === "admin") {
-      return NextResponse.redirect(new URL("/admin", req.url));
+    if (token) {
+      if (token.role === "admin") {
+        return NextResponse.redirect(new URL("/admin", req.url));
+      } else {
+        return NextResponse.redirect(new URL("/shop", req.url));
+      }
     }
   }
 

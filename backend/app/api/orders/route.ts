@@ -123,11 +123,62 @@ function jsonWithCors(body: unknown, status: number) {
   });
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const client = await clientPromise;
   const db = client.db();
+  const col = db.collection<OrderDocument>(ORDERS_COLLECTION);
 
-  const orders = await db.collection<OrderDocument>(ORDERS_COLLECTION).find().toArray();
+  const { searchParams } = new URL(request.url);
 
-  return NextResponse.json(orders);
+  // ── Fast stats-only mode for admin dashboard ──────────────────────────────
+  if (searchParams.get("stats") === "1") {
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const [totalOrders, todayOrders, pendingOrders, revenueResult] = await Promise.all([
+      col.countDocuments(),
+      col.countDocuments({ createdAt: { $gte: startOfDay } }),
+      col.countDocuments({ status: { $in: ["pending", "placed"] } }),
+      col.aggregate([
+        { $group: { _id: null, total: { $sum: "$total" } } },
+      ]).toArray(),
+    ]);
+
+    return NextResponse.json({
+      totalOrders,
+      todayOrders,
+      pendingOrders,
+      revenue: revenueResult[0]?.total ?? 0,
+    }, {
+      headers: {
+        ...corsHeaders,
+        "Cache-Control": "private, max-age=30, stale-while-revalidate=60",
+      },
+    });
+  }
+
+  // ── Paginated order list ──────────────────────────────────────────────────
+  const page  = Math.max(1, parseInt(searchParams.get("page")  ?? "1",  10));
+  const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") ?? "20", 10)));
+  const skip  = (page - 1) * limit;
+  const status = searchParams.get("status") ?? "";
+
+  const query: any = {};
+  if (status) query.status = status;
+
+  const [orders, total] = await Promise.all([
+    col.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).toArray(),
+    col.countDocuments(query),
+  ]);
+
+  return NextResponse.json(
+    { orders, total, page, limit, totalPages: Math.ceil(total / limit) },
+    {
+      headers: {
+        ...corsHeaders,
+        "Cache-Control": "private, max-age=15, stale-while-revalidate=30",
+      },
+    }
+  );
 }
+

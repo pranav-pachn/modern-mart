@@ -1,16 +1,49 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
-import { Package, Upload, Check } from "lucide-react";
+import { Package, Upload, Check, Loader2, ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 const CATEGORIES = ["Vegetables", "Fruits", "Dairy", "Beverages", "Snacks", "Bakery", "Household", "Staples", "Other"];
 
-export default function AdminAddProduct() {
+export default function AdminEditProduct() {
+  const { id } = useParams();
+  const router = useRouter();
+
   const [form, setForm] = useState({ name: "", price: "", category: "", image: "", stock: "", description: "", unit: "" });
   const [preview, setPreview] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        const res = await fetch(`/api/products/${id}`);
+        if (!res.ok) throw new Error("Failed to fetch");
+        const data = await res.json();
+        setForm({
+          name: data.name || "",
+          price: data.price || "",
+          category: data.category || "",
+          image: data.image || "",
+          stock: data.stock !== undefined ? String(data.stock) : "",
+          description: data.description || "",
+          unit: data.unit || "",
+        });
+        if (data.image) setPreview(data.image);
+      } catch (err) {
+        console.error(err);
+        alert("Failed to load product");
+        router.push("/admin/products");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    if (id) fetchProduct();
+  }, [id, router]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -29,27 +62,43 @@ export default function AdminAddProduct() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.image) { alert("Please upload a product image."); return; }
+    setIsProcessing(true);
 
-    const res = await fetch("/api/products", {
-      method: "POST",
+    const res = await fetch(`/api/products/${id}`, {
+      method: "PUT",
       body: JSON.stringify({ ...form, price: Number(form.price), stock: Number(form.stock) }),
     });
 
     if (res.ok) {
       setSuccess(true);
-      setForm({ name: "", price: "", category: "", image: "", stock: "", description: "", unit: "" });
-      setPreview(null);
-      setTimeout(() => setSuccess(false), 3000);
+      setTimeout(() => {
+        setSuccess(false);
+        router.push("/admin/products");
+      }, 1000);
     } else {
-      alert("Failed to add product. Please check all fields and try again.");
+      alert("Failed to edit product. Please check all fields and try again.");
+      setIsProcessing(false);
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+      </div>
+    );
+  }
+
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Add Product</h1>
-        <p className="text-sm text-gray-500 mt-1">Add a new item to your store inventory.</p>
+      <div className="mb-8 flex items-center gap-4">
+        <Link href="/admin/products" className="p-2 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition">
+          <ArrowLeft className="w-5 h-5 text-gray-600" />
+        </Link>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Edit Product</h1>
+          <p className="text-sm text-gray-500 mt-1">Update inventory item details.</p>
+        </div>
       </div>
 
       <div className="max-w-xl">
@@ -57,13 +106,12 @@ export default function AdminAddProduct() {
           <CardHeader className="border-b border-gray-100 pb-4">
             <CardTitle className="text-sm font-semibold text-gray-700 flex items-center gap-2">
               <Package className="w-4 h-4 text-emerald-600" />
-              New Product Details
+              Product Details
             </CardTitle>
           </CardHeader>
 
           <CardContent className="pt-6">
             <form onSubmit={handleSubmit} className="space-y-5">
-
               {/* Image Upload Area */}
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wider">
@@ -91,15 +139,6 @@ export default function AdminAddProduct() {
                   />
                 </label>
                 {isProcessing && <p className="text-xs text-blue-500 mt-1.5 font-medium">Processing image…</p>}
-                {preview && (
-                  <button
-                    type="button"
-                    onClick={() => { setPreview(null); setForm((f) => ({ ...f, image: "" })); }}
-                    className="mt-2 text-xs text-red-400 hover:text-red-600 font-medium"
-                  >
-                    Remove image
-                  </button>
-                )}
               </div>
 
               {/* Name */}
@@ -148,7 +187,7 @@ export default function AdminAddProduct() {
                 <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Category</label>
                 <select
                   className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-50 bg-white transition-all"
-                  value={form.category}
+                  value={form.category.toLowerCase()}
                   onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
                   required
                 >
@@ -188,13 +227,12 @@ export default function AdminAddProduct() {
                 className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white text-sm font-bold rounded-lg transition-colors mt-2"
               >
                 {success
-                  ? <><Check className="w-4 h-4" /> Product Added!</>
+                  ? <><Check className="w-4 h-4" /> Saved!</>
                   : isProcessing
                     ? "Please wait…"
-                    : "Save Product"
+                    : "Save Changes"
                 }
               </button>
-
             </form>
           </CardContent>
         </Card>

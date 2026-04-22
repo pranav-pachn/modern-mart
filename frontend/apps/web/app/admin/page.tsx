@@ -12,29 +12,26 @@ export default function AdminDashboard() {
   useEffect(() => {
     (async () => {
       try {
-        const [ordersRes, productsRes] = await Promise.all([
-          fetch("/api/orders"),
-          fetch("/api/products"),
+        // Use targeted, lean endpoints instead of fetching full collections
+        const [statsRes, productsRes] = await Promise.all([
+          fetch("/api/orders?stats=1"),
+          fetch("/api/products?page=1&limit=1"),
         ]);
-        if (!ordersRes.ok || !productsRes.ok) throw new Error("fetch failed");
-        const orders = await ordersRes.json();
-        let productsCount = 0;
-        const productsData = await productsRes.json();
-        productsCount = typeof productsData.total === "number"
-          ? productsData.total
-          : (Array.isArray(productsData) ? productsData.length : (productsData.products?.length || 0));
+        if (!statsRes.ok || !productsRes.ok) throw new Error("fetch failed");
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const statsData = await statsRes.json();
+        const productsData = await productsRes.json();
+
+        const productsCount = typeof productsData.total === "number"
+          ? productsData.total
+          : (productsData.products?.length ?? 0);
 
         setStats({
-          totalOrders: orders.length,
-          todaysOrders: orders.filter((o: any) => o.createdAt && new Date(o.createdAt) >= today).length,
+          totalOrders:  statsData.totalOrders  ?? 0,
+          todaysOrders: statsData.todayOrders   ?? 0,
           totalProducts: productsCount,
-          revenue: orders.reduce((s: number, o: any) => s + Number(o.total || 0), 0),
-          pending: orders.filter((o: any) =>
-            !o.status || ["pending", "placed"].includes(o.status.toLowerCase())
-          ).length,
+          revenue:       statsData.revenue       ?? 0,
+          pending:       statsData.pendingOrders ?? 0,
         });
       } catch {
         setError(true);
@@ -43,6 +40,7 @@ export default function AdminDashboard() {
       }
     })();
   }, []);
+
 
   const cards = [
     { title: "Total Orders",     value: stats.totalOrders,                      icon: ShoppingCart, color: "text-blue-600",    bg: "bg-blue-50" },

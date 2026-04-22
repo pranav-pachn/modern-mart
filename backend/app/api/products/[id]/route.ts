@@ -15,9 +15,9 @@ export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: corsHeaders });
 }
 
-export async function GET(req: Request, context: { params: any }) {
+export async function GET(req: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = context.params;
+    const { id } = await context.params;
     if (!ObjectId.isValid(id)) {
       return NextResponse.json({ error: "Invalid ID format" }, { status: 400, headers: corsHeaders });
     }
@@ -41,9 +41,9 @@ export async function GET(req: Request, context: { params: any }) {
 }
 
 
-export async function PUT(req: Request, context: { params: any }) {
+export async function PUT(req: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = context.params;
+    const { id } = await context.params;
     if (!ObjectId.isValid(id)) {
       return NextResponse.json({ error: "Invalid ID format" }, { status: 400, headers: corsHeaders });
     }
@@ -55,7 +55,7 @@ export async function PUT(req: Request, context: { params: any }) {
     const { processImageUpload } = await import("@/lib/image-helper");
     const finalImagePath = await processImageUpload(String(body.image), id);
 
-    const productToUpdate = {
+    const productToUpdate: Partial<ProductDocument> = {
       name: String(body.name),
       price: Number(body.price),
       category: String(body.category),
@@ -63,6 +63,8 @@ export async function PUT(req: Request, context: { params: any }) {
       stock: new Int32(Number(body.stock || 0)),
       updatedAt: new Date(),
     };
+    if (body.description !== undefined) productToUpdate.description = String(body.description);
+    if (body.unit !== undefined) productToUpdate.unit = String(body.unit);
 
     const result = await db.collection<ProductDocument>(PRODUCTS_COLLECTION).updateOne(
       { _id: new ObjectId(id) },
@@ -76,9 +78,9 @@ export async function PUT(req: Request, context: { params: any }) {
   }
 }
 
-export async function DELETE(req: Request, context: { params: any }) {
+export async function DELETE(req: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = context.params;
+    const { id } = await context.params;
     if (!ObjectId.isValid(id)) {
       return NextResponse.json({ error: "Invalid ID format" }, { status: 400, headers: corsHeaders });
     }

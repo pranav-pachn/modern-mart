@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import { Badge } from "@workspace/ui/components/badge";
 import { Pencil, Trash2, X, Check, ToggleLeft, ToggleRight, ChevronLeft, ChevronRight } from "lucide-react";
+import Link from "next/link";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -105,8 +106,6 @@ function StockToggle({ product, onChange }: { product: any; onChange: (p: any) =
 // ── Main Page ──────────────────────────────────────────────────────────────────
 export default function AdminProducts() {
   const [products, setProducts] = useState<any[]>([]);
-  const [editingProduct, setEditingProduct] = useState<any | null>(null);
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [page, setPage] = useState(1);
@@ -145,25 +144,6 @@ export default function AdminProducts() {
     const res = await fetch(`/api/products/${id}`, { method: "DELETE" });
     if (res.ok) setProducts((p) => p.filter((x) => x._id !== id));
     else alert("Failed to delete.");
-  };
-
-  const handleEditSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const res = await patchProduct(editingProduct._id, editingProduct);
-    if (res.ok) { update(editingProduct); setEditingProduct(null); }
-    else alert("Failed to save changes.");
-  };
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setIsUploadingImage(true);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setEditingProduct((p: any) => ({ ...p, image: reader.result }));
-      setIsUploadingImage(false);
-    };
-    reader.readAsDataURL(file);
   };
 
   return (
@@ -260,12 +240,12 @@ export default function AdminProducts() {
 
                   {/* Action buttons — big & touch-friendly */}
                   <div className="flex gap-2">
-                    <button
-                      onClick={() => setEditingProduct({ ...p })}
+                    <Link
+                      href={`/admin/edit-product/${p._id}`}
                       className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-blue-50 text-blue-600 text-sm font-semibold rounded-xl hover:bg-blue-100 transition-colors active:scale-95"
                     >
                       <Pencil className="w-4 h-4" /> Edit
-                    </button>
+                    </Link>
                     <button
                       onClick={() => handleDelete(p._id)}
                       className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-red-50 text-red-600 text-sm font-semibold rounded-xl hover:bg-red-100 transition-colors active:scale-95"
@@ -299,89 +279,6 @@ export default function AdminProducts() {
             >
               Next <ChevronRight className="w-4 h-4" />
             </button>
-          </div>
-        </div>
-      )}
-      {/* ── Edit Modal ── */}
-      {editingProduct && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center backdrop-blur-sm">
-          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white flex items-center justify-between px-6 py-4 border-b border-gray-100 z-10">
-              <h2 className="text-base font-bold text-gray-900">Edit Product</h2>
-              <button onClick={() => setEditingProduct(null)} className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <form onSubmit={handleEditSubmit} className="p-6 space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Name</label>
-                <input
-                  className="w-full px-3 py-3 border border-gray-200 rounded-xl text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-50"
-                  value={editingProduct.name}
-                  onChange={(e) => setEditingProduct((p: any) => ({ ...p, name: e.target.value }))}
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Price (₹)</label>
-                  <input
-                    type="number"
-                    className="w-full px-3 py-3 border border-gray-200 rounded-xl text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-50"
-                    value={editingProduct.price}
-                    onChange={(e) => setEditingProduct((p: any) => ({ ...p, price: e.target.value }))}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Stock</label>
-                  <input
-                    type="number"
-                    className="w-full px-3 py-3 border border-gray-200 rounded-xl text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-50"
-                    value={editingProduct.stock}
-                    onChange={(e) => setEditingProduct((p: any) => ({ ...p, stock: e.target.value }))}
-                    required
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Category</label>
-                <input
-                  className="w-full px-3 py-3 border border-gray-200 rounded-xl text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-50"
-                  value={editingProduct.category}
-                  onChange={(e) => setEditingProduct((p: any) => ({ ...p, category: e.target.value }))}
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Replace Image</label>
-                {editingProduct.image && (
-                  <img src={editingProduct.image} alt="preview" className="w-16 h-16 rounded-xl object-cover border border-gray-200 mb-2" />
-                )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="text-sm text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
-                />
-                {isUploadingImage && <p className="text-xs text-blue-500 mt-1">Processing image…</p>}
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setEditingProduct(null)}
-                  className="flex-1 py-3 text-sm font-semibold text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-3 text-sm font-bold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-colors flex items-center justify-center gap-1.5"
-                >
-                  <Check className="w-4 h-4" /> Save Changes
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       )}

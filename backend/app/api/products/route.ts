@@ -80,6 +80,8 @@ const productSchema = z.object({
   category: z.string().min(1, "Category is required"),
   image: z.string().or(z.literal("")),
   stock: z.number().int().nonnegative().optional().default(0),
+  description: z.string().optional(),
+  unit: z.string().optional(),
 });
 
 export async function POST(req: Request) {
@@ -110,6 +112,8 @@ export async function POST(req: Request) {
       category: parsed.data.category,
       image: finalImagePath,
       stock: new Int32(parsed.data.stock),
+      description: parsed.data.description,
+      unit: parsed.data.unit,
       createdAt: now,
       updatedAt: now,
     };
