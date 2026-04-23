@@ -69,7 +69,7 @@ export default function Home() {
                 <li>✅ Delivery available across Bodhan</li>
                 <li>✅ Same-day delivery on most orders</li>
                 <li>✅ Real-time order tracking</li>
-                <li>✅ No minimum order amount</li>
+                <li>✅ Minimum order amount: Rs. 200</li>
               </ul>
               <Link href="/shop" className="lp-cta-btn" style={{ marginTop: "24px", display: "inline-flex" }}>
                 Order Now

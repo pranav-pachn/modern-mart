@@ -90,6 +90,9 @@ export async function GET(request: NextRequest) {
     col.find({}).sort({ createdAt: -1 }).limit(8).project({ 
       _id: 1, 
       userName: 1, 
+      phone: 1,
+      address: 1,
+      items: 1,
       status: 1, 
       total: 1, 
       createdAt: 1,

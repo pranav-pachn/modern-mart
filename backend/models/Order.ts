@@ -14,12 +14,15 @@ export type OrderDocument = {
   userName: string;
   phone: string;
   address: string;
+  deliverySlot: string;
+  subtotal: number;
   items: OrderItem[];
   total: number;
   status: string;
   paymentMethod: string;
   paymentId?: string;
   paymentStatus?: string;
+  notes?: string;
   createdAt: Date;
 };
 
@@ -30,6 +33,8 @@ export const orderValidator = {
       "userName",
       "phone",
       "address",
+      "deliverySlot",
+      "subtotal",
       "items",
       "total",
       "status",
@@ -52,6 +57,13 @@ export const orderValidator = {
       address: {
         bsonType: "string",
         minLength: 1,
+      },
+      deliverySlot: {
+        enum: ["Morning", "Afternoon", "Evening"],
+      },
+      subtotal: {
+        bsonType: ["int", "long", "double", "decimal"],
+        minimum: 0,
       },
       items: {
         bsonType: "array",
@@ -85,7 +97,7 @@ export const orderValidator = {
         minimum: 0,
       },
       status: {
-        enum: ["pending", "confirmed", "packed", "delivered", "cancelled"],
+        enum: ["pending", "placed", "accepted", "confirmed", "packed", "out for delivery", "delivered", "cancelled"],
       },
       paymentMethod: {
         bsonType: "string",
@@ -96,6 +108,10 @@ export const orderValidator = {
       },
       paymentStatus: {
         bsonType: "string",
+      },
+      notes: {
+        bsonType: "string",
+        maxLength: 500,
       },
       createdAt: {
         bsonType: "date",

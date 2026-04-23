@@ -1,14 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { 
   ArrowLeft, 
   CheckCircle2, 
-  Clock, 
   Package, 
-  Truck, 
   XCircle,
   ShoppingBag,
   MapPin,
@@ -38,15 +36,28 @@ type Order = {
 };
 
 const STATUS_STEPS = [
-  { id: "pending", label: "Order Placed", icon: ShoppingBag },
-  { id: "accepted", label: "Confirmed", icon: Package },
-  { id: "out for delivery", label: "Out for Delivery", icon: Truck },
+  { id: "placed", label: "Placed", icon: ShoppingBag },
+  { id: "confirmed", label: "Confirmed", icon: Package },
   { id: "delivered", label: "Delivered", icon: CheckCircle2 },
 ];
 
+function normalizeOrderStatus(status: string | undefined): "placed" | "confirmed" | "delivered" | "cancelled" {
+  const value = (status ?? "pending").toLowerCase();
+  if (value === "delivered") return "delivered";
+  if (value === "cancelled") return "cancelled";
+  if (["accepted", "confirmed", "packed", "out for delivery"].includes(value)) return "confirmed";
+  return "placed";
+}
+
+function getStatusLabel(status: "placed" | "confirmed" | "delivered" | "cancelled") {
+  if (status === "cancelled") return "Cancelled";
+  if (status === "delivered") return "Delivered";
+  if (status === "confirmed") return "Confirmed";
+  return "Placed";
+}
+
 export default function OrderTrackingPage() {
   const { id } = useParams();
-  const router = useRouter();
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -103,13 +114,12 @@ export default function OrderTrackingPage() {
   }
 
   // Determine current step index
-  const currentStatus = order.status.toLowerCase();
+  const currentStatus = normalizeOrderStatus(order.status);
   const isCancelled = currentStatus === "cancelled";
   
   let currentStepIndex = 0;
-  if (currentStatus === "accepted") currentStepIndex = 1;
-  else if (currentStatus === "out for delivery") currentStepIndex = 2;
-  else if (currentStatus === "delivered") currentStepIndex = 3;
+  if (currentStatus === "confirmed") currentStepIndex = 1;
+  else if (currentStatus === "delivered") currentStepIndex = 2;
 
   return (
     <main className="min-h-screen bg-zinc-50 px-4 py-8 sm:px-6 lg:px-8 pb-24">
@@ -142,7 +152,7 @@ export default function OrderTrackingPage() {
               currentStatus === "delivered" ? "bg-emerald-100 text-emerald-700" :
               "bg-blue-100 text-blue-700"
             }`}>
-              {currentStatus}
+              {getStatusLabel(currentStatus)}
             </span>
           </div>
         </div>
@@ -150,7 +160,7 @@ export default function OrderTrackingPage() {
         <div className="space-y-6">
           {/* Status Timeline */}
           <section className="rounded-3xl border border-zinc-200 bg-white p-6 sm:p-8 shadow-sm">
-            <h2 className="text-lg font-bold text-zinc-900 mb-6">Delivery Status</h2>
+            <h2 className="text-lg font-bold text-zinc-900 mb-6">Order Status</h2>
             
             {isCancelled ? (
               <div className="flex flex-col items-center justify-center py-6 text-center">
@@ -238,7 +248,7 @@ export default function OrderTrackingPage() {
                 <CreditCard className="h-5 w-5 shrink-0 text-emerald-600" />
                 <div>
                   <p className="font-medium text-zinc-900">Payment</p>
-                  <p>{order.paymentMethod === "online" ? "Online Payment" : "Cash on Delivery"}</p>
+                  <p>{order.paymentMethod?.toUpperCase() === "ONLINE" ? "Online Payment" : "Cash on Delivery"}</p>
                   <span className={`inline-block mt-1 text-[11px] font-bold px-2 py-0.5 rounded-md ${
                     order.paymentStatus === "success" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
                   }`}>

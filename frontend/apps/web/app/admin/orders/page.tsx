@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { adminFetch } from "@/lib/admin-fetch";
 import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
 import { Badge } from "@workspace/ui/components/badge";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, MessageCircle, PhoneCall } from "lucide-react";
 
 const STATUS_FLOW: Record<string, { next: string; label: string; color: string; nextLabel: string }> = {
   pending:          { next: "Accepted",         label: "Placed",           color: "bg-gray-100 text-gray-600",    nextLabel: "Accept" },
@@ -17,6 +17,26 @@ const STATUS_FLOW: Record<string, { next: string; label: string; color: string; 
 function getStatusMeta(status: string) {
   const key = (status || "pending").toLowerCase();
   return STATUS_FLOW[key] || { next: "Accepted", label: "Placed", color: "bg-gray-100 text-gray-600", nextLabel: "Accept" };
+}
+
+function normalizePhone(phone?: string) {
+  return (phone || "").trim().replace(/[\s()-]/g, "");
+}
+
+function getContactLinks(phone?: string) {
+  const cleaned = normalizePhone(phone);
+  if (!cleaned) return null;
+
+  const whatsappNumber = cleaned.replace(/[^\d+]/g, "").replace(/^\+/, "");
+
+  return {
+    callHref: `tel:${cleaned}`,
+    whatsappHref: `https://wa.me/${whatsappNumber}`,
+  };
+}
+
+function getOrderId(order: any) {
+  return typeof order?._id === "string" ? order._id : String(order?._id ?? "");
 }
 
 export default function AdminOrders() {
@@ -54,11 +74,17 @@ export default function AdminOrders() {
   const updateStatus = async (id: string, status: string) => {
     // Optimistic update
     setOrders((prev) => prev.map((o) => (o._id === id ? { ...o, status } : o)));
-    const res = await fetch("/api/orders/update", {
+    const res = await adminFetch("/api/orders/update", {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, status }),
     });
-    if (!res.ok) alert("Failed to update order status.");
+
+    if (!res.ok) {
+      const errorBody = await res.json().catch(() => null);
+      console.error("Failed to update order status:", errorBody ?? res.statusText);
+      alert(errorBody?.error ?? "Failed to update order status.");
+    }
   };
 
   return (
@@ -132,14 +158,16 @@ export default function AdminOrders() {
         <div className="space-y-4">
           {filteredOrders.map((order) => {
             const meta = getStatusMeta(order.status);
+            const contactLinks = getContactLinks(order.phone);
             return (
-              <Card key={order._id} className="shadow-none border border-gray-200 hover:border-gray-300 transition-colors">
+              <Card key={getOrderId(order)} className="shadow-none border border-gray-200 hover:border-gray-300 transition-colors">
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between gap-4 mb-4">
                     {/* Customer Info */}
                     <div>
                       <h3 className="font-bold text-gray-900">{order.userName || "Guest"}</h3>
                       <p className="text-sm text-gray-500 mt-0.5">📞 {order.phone || "—"}</p>
+                      <p className="text-sm text-gray-500 mt-0.5">🕒 {order.deliverySlot || "—"}</p>
                       <p className="text-xs text-gray-400 mt-0.5 truncate max-w-xs">📍 {order.address || "—"}</p>
                     </div>
                     {/* Status Badge */}
@@ -147,6 +175,27 @@ export default function AdminOrders() {
                       {meta.label}
                     </span>
                   </div>
+
+                  {contactLinks && (
+                    <div className="mb-4 flex flex-wrap gap-2">
+                      <a
+                        href={contactLinks.callHref}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100"
+                      >
+                        <PhoneCall className="h-3.5 w-3.5" />
+                        Call Customer
+                      </a>
+                      <a
+                        href={contactLinks.whatsappHref}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs font-bold text-green-700 transition-colors hover:bg-green-100"
+                      >
+                        <MessageCircle className="h-3.5 w-3.5" />
+                        Open WhatsApp
+                      </a>
+                    </div>
+                  )}
 
                   {/* Items */}
                   <div className="bg-gray-50 rounded-lg p-3 mb-4 space-y-1.5">
@@ -165,7 +214,7 @@ export default function AdminOrders() {
                   {/* Action Button — progress to next status */}
                   {meta.nextLabel ? (
                     <button
-                      onClick={() => updateStatus(order._id, meta.next)}
+                      onClick={() => updateStatus(getOrderId(order), meta.next)}
                       className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors"
                     >
                       {meta.nextLabel} <ChevronRight className="w-3.5 h-3.5" />

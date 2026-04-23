@@ -21,6 +21,9 @@ import toast from "react-hot-toast";
 
 const ORDERS_API_URL = "/api/orders";
 const ADDRESS_API_URL = "/api/user/address";
+const MINIMUM_ORDER_VALUE = 200;
+
+const DELIVERY_SLOTS = ["Morning", "Afternoon", "Evening"] as const;
 
 type UserAddress = {
   id: string;
@@ -44,6 +47,7 @@ export default function CheckoutPage() {
   const [statusMessage, setStatusMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cod");
+  const [deliverySlot, setDeliverySlot] = useState<(typeof DELIVERY_SLOTS)[number]>("Morning");
 
   const [savedAddresses, setSavedAddresses] = useState<UserAddress[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
@@ -53,7 +57,11 @@ export default function CheckoutPage() {
     userName: "",
     phone: "",
     address: "",
+    notes: "",
   });
+
+  const isMinimumOrderMet = subtotal >= MINIMUM_ORDER_VALUE;
+  const minimumOrderShortfall = Math.max(0, MINIMUM_ORDER_VALUE - subtotal);
 
   useEffect(() => {
     if (session) {
@@ -121,7 +129,7 @@ export default function CheckoutPage() {
             });
             if (!verifyRes.ok) throw new Error("Payment verification failed");
             clearCart();
-            router.push("/order-success");
+            router.push(`/order-success?orderId=${encodeURIComponent(orderId)}`);
           } catch {
             setStatusMessage("Payment verification failed. Please contact support.");
             setIsSubmitting(false);
@@ -148,10 +156,14 @@ export default function CheckoutPage() {
     const phone = (formData?.get("phone") as string) ?? deliveryDetails.phone;
     const address = (formData?.get("address") as string) ?? deliveryDetails.address;
 
+    const normalizedPaymentMethod = paymentMethod === "online" ? "ONLINE" : "COD";
+
     const payload = {
       userName,
       phone,
       address,
+      deliverySlot,
+      subtotal: Number(subtotal),
       items: items.map((item) => ({
         productId: item.id,
         name: item.name,
@@ -159,7 +171,8 @@ export default function CheckoutPage() {
         quantity: Number(item.quantity),
       })),
       total: Number(total),
-      paymentMethod,
+      paymentMethod: normalizedPaymentMethod,
+      notes: deliveryDetails.notes.trim() || undefined,
     };
 
     try {
@@ -191,6 +204,11 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (!isMinimumOrderMet) {
+      setStatusMessage(`Minimum order is Rs. ${MINIMUM_ORDER_VALUE}. Add Rs. ${minimumOrderShortfall} more to continue.`);
+      return;
+    }
+
     const formData = new FormData(event.currentTarget);
     setIsSubmitting(true);
     setStatusMessage("");
@@ -205,7 +223,7 @@ export default function CheckoutPage() {
 
     clearCart();
     toast.success("Order placed successfully! 🎉");
-    router.push("/order-success");
+    router.push(`/order-success?orderId=${encodeURIComponent(orderId)}`);
   };
 
   return (
@@ -359,6 +377,26 @@ export default function CheckoutPage() {
                 />
               </div>
 
+              {/* Order notes */}
+              <div>
+                <label htmlFor="notes" className="mb-1.5 block text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+                  Order Notes
+                </label>
+                <textarea
+                  id="notes"
+                  name="notes"
+                  rows={3}
+                  value={deliveryDetails.notes}
+                  onChange={(e) => setDeliveryDetails({ ...deliveryDetails, notes: e.target.value })}
+                  placeholder="Example: Don't add onions"
+                  maxLength={500}
+                  className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-900 outline-none ring-emerald-500 transition focus:ring-2 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                />
+                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                  Add any special requests or instructions for your order.
+                </p>
+              </div>
+
               {/* Payment method */}
               <fieldset>
                 <legend className="mb-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
@@ -394,10 +432,45 @@ export default function CheckoutPage() {
                 </div>
               </fieldset>
 
+              {/* Delivery slot */}
+              <fieldset>
+                <legend className="mb-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+                  Delivery Slot
+                </legend>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {DELIVERY_SLOTS.map((slot) => (
+                    <label
+                      key={slot}
+                      className={`flex cursor-pointer items-center justify-center rounded-xl border-2 px-3 py-3 text-sm font-semibold transition-all ${
+                        deliverySlot === slot
+                          ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20"
+                          : "border-zinc-200 text-zinc-600 hover:border-zinc-300 dark:border-zinc-700 dark:text-zinc-300"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="deliverySlot"
+                        value={slot}
+                        checked={deliverySlot === slot}
+                        onChange={(e) => setDeliverySlot(e.target.value as (typeof DELIVERY_SLOTS)[number])}
+                        className="sr-only"
+                      />
+                      {slot}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+
+              {!isMinimumOrderMet && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-200">
+                  Minimum order is Rs. {MINIMUM_ORDER_VALUE}. Add Rs. {minimumOrderShortfall} more to place this order.
+                </div>
+              )}
+
               {/* Submit */}
               <button
                 type="submit"
-                disabled={isSubmitting || items.length === 0}
+                disabled={isSubmitting || items.length === 0 || !isMinimumOrderMet}
                 className="inline-flex h-13 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 text-sm font-bold text-white shadow-lg shadow-emerald-100 transition hover:bg-emerald-700 hover:-translate-y-0.5 disabled:pointer-events-none disabled:opacity-60"
                 style={{ height: "52px" }}
               >

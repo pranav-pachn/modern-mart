@@ -60,6 +60,8 @@ const orderValidator = {
       "userName",
       "phone",
       "address",
+      "deliverySlot",
+      "subtotal",
       "items",
       "total",
       "status",
@@ -72,6 +74,8 @@ const orderValidator = {
       userName: { bsonType: "string", minLength: 1 },
       phone: { bsonType: "string", minLength: 1 },
       address: { bsonType: "string", minLength: 1 },
+      deliverySlot: { enum: ["Morning", "Afternoon", "Evening"] },
+      subtotal: { bsonType: ["int", "long", "double", "decimal"], minimum: 0 },
       items: {
         bsonType: "array",
         minItems: 1,
@@ -92,11 +96,12 @@ const orderValidator = {
       },
       total: { bsonType: ["int", "long", "double", "decimal"], minimum: 0 },
       status: {
-        enum: ["pending", "confirmed", "packed", "delivered", "cancelled"],
+        enum: ["pending", "placed", "accepted", "confirmed", "packed", "out for delivery", "delivered", "cancelled"],
       },
       paymentMethod: { bsonType: "string", minLength: 1 },
       paymentId: { bsonType: "string" },
       paymentStatus: { bsonType: "string" },
+      notes: { bsonType: "string", maxLength: 500 },
       createdAt: { bsonType: "date" },
     },
   },
@@ -240,14 +245,23 @@ async function normalizeProducts(db) {
 async function normalizeOrders(db) {
   const orders = db.collection("orders");
 
-  await orders.updateMany({}, [
-    {
-      $replaceRoot: {
-        newRoot: {
+  await orders.updateMany(
+    {},
+    [
+      {
+        $replaceRoot: {
+          newRoot: {
           _id: "$_id",
           userName: { $ifNull: ["$userName", "Guest Customer"] },
           phone: { $ifNull: ["$phone", "Not provided"] },
           address: { $ifNull: ["$address", "Not provided"] },
+          deliverySlot: {
+            $cond: {
+              if: { $in: ["$deliverySlot", ["Morning", "Afternoon", "Evening"]] },
+              then: "$deliverySlot",
+              else: "Morning",
+            },
+          },
           items: {
             $cond: {
               if: { $gt: [{ $size: { $ifNull: ["$items", []] } }, 0] },
@@ -273,13 +287,32 @@ async function normalizeOrders(db) {
               ],
             },
           },
+          subtotal: {
+            $ifNull: [
+              "$subtotal",
+              {
+                $sum: {
+                  $map: {
+                    input: { $ifNull: ["$items", []] },
+                    as: "item",
+                    in: {
+                      $multiply: [
+                        { $ifNull: ["$$item.price", 0] },
+                        { $ifNull: ["$$item.quantity", 1] },
+                      ],
+                    },
+                  },
+                },
+              },
+            ],
+          },
           total: { $ifNull: ["$total", 0] },
           status: {
             $cond: {
               if: {
                 $in: [
                   "$status",
-                  ["pending", "confirmed", "packed", "delivered", "cancelled"],
+                  ["pending", "placed", "accepted", "confirmed", "packed", "out for delivery", "delivered", "cancelled"],
                 ],
               },
               then: "$status",
@@ -289,11 +322,14 @@ async function normalizeOrders(db) {
           paymentMethod: { $ifNull: ["$paymentMethod", "COD"] },
           paymentId: { $ifNull: ["$paymentId", "$$REMOVE"] },
           paymentStatus: { $ifNull: ["$paymentStatus", "$$REMOVE"] },
+          notes: { $ifNull: ["$notes", "$$REMOVE"] },
           createdAt: { $ifNull: ["$createdAt", "$$NOW"] },
+          },
         },
       },
-    },
-  ]);
+    ],
+    { bypassDocumentValidation: true }
+  );
 }
 
 async function seedProductsIfEmpty(db) {

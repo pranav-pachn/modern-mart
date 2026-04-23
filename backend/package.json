@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "setup-db": "node scripts/setup-db.mjs",
+    "normalize-orders": "node scripts/normalize-orders.mjs",
     "start": "next start",
     "lint": "eslint"
   },

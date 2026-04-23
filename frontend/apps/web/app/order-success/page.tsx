@@ -2,9 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 export default function OrderSuccessPage() {
   const [show, setShow] = useState(false);
+  const searchParams = useSearchParams();
+  const orderId = searchParams.get("orderId");
+  const receiptNumber = orderId ? orderId.slice(-6).toUpperCase() : "PENDING";
 
   useEffect(() => {
     // Trigger entrance animation after mount
@@ -61,8 +65,28 @@ export default function OrderSuccessPage() {
           We'll deliver it fresh to your door in Bodhan.
         </p>
 
+        <div className="mt-8 w-full rounded-2xl border border-gray-200 bg-white/90 p-5 shadow-sm backdrop-blur-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gray-500">Receipt</p>
+          <div className="mt-3 flex items-center justify-between gap-4">
+            <div className="text-left">
+              <p className="text-sm font-medium text-gray-500">Order Number</p>
+              <p className="mt-1 text-2xl font-black tracking-tight text-gray-900">
+                Order #{receiptNumber}
+              </p>
+            </div>
+            <div className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+              Confirmed
+            </div>
+          </div>
+          {orderId && (
+            <p className="mt-3 break-all text-xs text-gray-400">
+              Reference ID: {orderId}
+            </p>
+          )}
+        </div>
+
         {/* Order status card */}
-        <div className="mt-10 w-full rounded-2xl border border-emerald-100 bg-emerald-50/60 p-6">
+        <div className="mt-6 w-full rounded-2xl border border-emerald-100 bg-emerald-50/60 p-6">
           <div className="flex items-center gap-4 mb-5">
             <span className="text-3xl">📦</span>
             <div className="text-left">
@@ -111,6 +135,11 @@ export default function OrderSuccessPage() {
 
         {/* Action buttons */}
         <div className="mt-8 flex flex-col sm:flex-row gap-3 w-full">
+          {orderId && (
+            <Link href={`/order/${orderId}`} className="lp-cta-btn flex-1 justify-center">
+              Track Order
+            </Link>
+          )}
           <Link href="/shop" className="lp-cta-btn flex-1 justify-center">
             Continue Shopping →
           </Link>

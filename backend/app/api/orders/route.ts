@@ -7,6 +7,7 @@ import { z } from "zod";
 import { requireAdminToken, rateLimit } from "@/lib/api-guard";
 
 export const runtime = "nodejs";
+const MINIMUM_ORDER_VALUE = 200;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -28,13 +29,28 @@ const orderItemSchema = z.object({
   quantity: z.number().int().positive(),
 });
 
+const paymentMethodSchema = z
+  .string()
+  .trim()
+  .toUpperCase()
+  .pipe(z.enum(["COD", "ONLINE"]))
+  .default("COD");
+
+const deliverySlotSchema = z
+  .string()
+  .trim()
+  .pipe(z.enum(["Morning", "Afternoon", "Evening"]));
+
 const orderSchema = z.object({
   userName: z.string().min(1, "Name is required"),
   phone: z.string().min(1, "Phone is required"),
   address: z.string().min(1, "Address is required"),
+  deliverySlot: deliverySlotSchema,
+  subtotal: z.number().nonnegative("Subtotal is required"),
   items: z.array(orderItemSchema).min(1, "At least one item is required"),
   total: z.number().nonnegative("Total is required"),
-  paymentMethod: z.enum(["COD", "ONLINE"]).default("COD"),
+  paymentMethod: paymentMethodSchema,
+  notes: z.string().trim().max(500, "Notes must be 500 characters or less.").optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -56,10 +72,22 @@ export async function POST(request: NextRequest) {
       userName,
       phone,
       address,
+      deliverySlot,
+      subtotal,
       items,
       total,
       paymentMethod,
+      notes,
     } = parsed.data;
+
+    if (subtotal < MINIMUM_ORDER_VALUE) {
+      return jsonWithCors(
+        {
+          error: `Minimum order value is Rs. ${MINIMUM_ORDER_VALUE}.`,
+        },
+        400
+      );
+    }
 
     const paymentStatus = "pending";
 
@@ -67,11 +95,14 @@ export async function POST(request: NextRequest) {
       userName,
       phone,
       address,
+      deliverySlot,
+      subtotal,
       items,
       total: total as number,
       status: "pending",
       paymentMethod,
       paymentStatus,
+      notes: notes?.trim() || undefined,
       createdAt: new Date(),
     };
 
