@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 
 // Simple in-memory rate limiter for AI route
 const aiRateLimit = new Map<string, { count: number; expires: number }>();
@@ -6,14 +7,19 @@ const aiRateLimit = new Map<string, { count: number; expires: number }>();
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, x-admin-secret",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
-// Check if the request carries a valid x-admin-secret header
-function hasAdminSecret(req: NextRequest): boolean {
+async function hasAdminAccess(req: NextRequest): Promise<boolean> {
+  const token = await getToken({ req, secret: process.env.AUTH_SECRET });
+  if ((token as { role?: string } | null)?.role === "admin") {
+    return true;
+  }
+
+  // Keep local scripting fallback in non-production only.
   const secret = process.env.ADMIN_SECRET || "";
   const provided = req.headers.get("x-admin-secret") ?? "";
-  return secret.length > 0 && provided === secret;
+  return process.env.NODE_ENV !== "production" && secret.length > 0 && provided === secret;
 }
 
 export async function middleware(req: NextRequest) {
@@ -52,12 +58,11 @@ export async function middleware(req: NextRequest) {
   // - PUT/DELETE /api/products/*
   // - POST /api/orders/update
   //
-  // Auth is accepted via x-admin-secret header (used by adminFetch on the
-  // frontend). Per-route handlers already call requireAdminToken() as a
-  // second line of defence.
+  // Auth is validated using NextAuth JWT role=admin.
   const isProductsRoute = pathname === "/api/products" || pathname.startsWith("/api/products/");
   const isReviewsRoute = pathname.match(/^\/api\/products\/[^/]+\/reviews/);
   const isOrdersUpdateRoute = pathname.startsWith("/api/orders/update");
+  const isAdminRoute = pathname.startsWith("/api/admin/");
 
   let requiresAdmin = false;
 
@@ -67,9 +72,12 @@ export async function middleware(req: NextRequest) {
   if (isOrdersUpdateRoute) {
     requiresAdmin = true;
   }
+  if (isAdminRoute) {
+    requiresAdmin = true;
+  }
 
   if (requiresAdmin) {
-    if (!hasAdminSecret(req)) {
+    if (!(await hasAdminAccess(req))) {
       return NextResponse.json(
         { error: "Unauthorized. Admin access required." },
         { status: 401, headers: corsHeaders }
@@ -85,6 +93,7 @@ export const config = {
     "/api/products",
     "/api/products/:path*",
     "/api/orders/update",
+    "/api/admin/:path*",
     "/api/ai/:path*"
   ],
 };

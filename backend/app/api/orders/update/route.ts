@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import clientPromise from "@/lib/mongodb";
 import { ORDERS_COLLECTION } from "@/models/Order";
+import { requireAdminToken } from "@/lib/api-guard";
 
 export const runtime = "nodejs";
 
@@ -18,8 +19,11 @@ export async function OPTIONS() {
   });
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
+    const authError = await requireAdminToken(req);
+    if (authError) return authError;
+
     const body = await req.json();
     const id = typeof body?.id === "string" ? body.id.trim() : "";
     const rawStatus = typeof body?.status === "string" ? body.status.trim() : "";

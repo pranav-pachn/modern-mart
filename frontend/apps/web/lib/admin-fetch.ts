@@ -1,6 +1,7 @@
 /**
- * adminFetch — a thin wrapper around fetch() that automatically injects
- * the x-admin-secret header for all admin API calls.
+ * adminFetch — thin wrapper around fetch() used by admin pages.
+ *
+ * Admin authorization is enforced server-side via NextAuth JWT role checks.
  *
  * Usage:
  *   const res = await adminFetch("/api/orders?stats=1");
@@ -10,15 +11,5 @@ export async function adminFetch(
   url: string,
   init: RequestInit = {}
 ): Promise<Response> {
-  const headers = new Headers(init.headers);
-
-  // The secret is exposed to the client only because this is a private admin
-  // panel. In a production multi-tenant app, use a session-bound server action
-  // or next-auth session token instead.
-  const secret = process.env.NEXT_PUBLIC_ADMIN_SECRET ?? "";
-  if (secret) {
-    headers.set("x-admin-secret", secret);
-  }
-
-  return fetch(url, { ...init, headers });
+  return fetch(url, init);
 }

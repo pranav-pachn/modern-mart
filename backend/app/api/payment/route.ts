@@ -13,6 +13,7 @@ const corsHeaders = {
 
 // ── Zod schema ────────────────────────────────────────────────────────────────
 const paymentSchema = z.object({
+  orderId: z.string().min(1, "Order ID is required"),
   // Amount is in INR (rupees). Cap at ₹1,00,000 to prevent abuse.
   amount: z
     .number({ invalid_type_error: "Amount must be a number" })
@@ -48,7 +49,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { amount } = parsed.data;
+    const { amount, orderId } = parsed.data;
 
     const keyId     = process.env.RAZORPAY_KEY_ID;
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
@@ -66,6 +67,8 @@ export async function POST(request: NextRequest) {
     const order = await razorpay.orders.create({
       amount: Math.round(amount * 100), // paise
       currency: "INR",
+      receipt: orderId.slice(-40),
+      notes: { orderId },
     });
 
     return NextResponse.json(order, { headers: corsHeaders });

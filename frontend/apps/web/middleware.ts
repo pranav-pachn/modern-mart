@@ -9,15 +9,6 @@ async function isAdmin(req: NextRequest): Promise<boolean> {
   return (token as any)?.role === "admin";
 }
 
-// adminFetch() on the client sends x-admin-secret; check that too so proxied
-// API calls don't get blocked before they reach the backend.
-function hasAdminSecret(req: NextRequest): boolean {
-  const secret =
-    process.env.NEXT_PUBLIC_ADMIN_SECRET || process.env.ADMIN_SECRET || "";
-  const provided = req.headers.get("x-admin-secret") ?? "";
-  return secret.length > 0 && provided === secret;
-}
-
 // Rate-limit login attempts — 10 per minute per IP
 const loginRateLimit = new Map<string, { count: number; expires: number }>();
 
@@ -68,10 +59,11 @@ export async function middleware(req: NextRequest) {
     pathname === "/api/products" || pathname.startsWith("/api/products/");
   const isReviewsRoute = pathname.match(/^\/api\/products\/[^/]+\/reviews/);
   const isOrdersUpdateRoute = pathname.startsWith("/api/orders/update");
+  const isAdminStatsRoute = pathname.startsWith("/api/admin");
 
   // Block non-GET product mutations unless the caller is admin, exempting reviews
   if (isProductsRoute && method !== "GET" && method !== "OPTIONS" && !isReviewsRoute) {
-    if (!hasAdminSecret(req) && !(await isAdmin(req))) {
+    if (!(await isAdmin(req))) {
       return NextResponse.json(
         { error: "Unauthorized. Admin access required." },
         { status: 401 }
@@ -81,7 +73,16 @@ export async function middleware(req: NextRequest) {
 
   // Block order-status changes for non-admins
   if (isOrdersUpdateRoute && method !== "OPTIONS") {
-    if (!hasAdminSecret(req) && !(await isAdmin(req))) {
+    if (!(await isAdmin(req))) {
+      return NextResponse.json(
+        { error: "Unauthorized. Admin access required." },
+        { status: 401 }
+      );
+    }
+  }
+
+  if (isAdminStatsRoute && method !== "OPTIONS") {
+    if (!(await isAdmin(req))) {
       return NextResponse.json(
         { error: "Unauthorized. Admin access required." },
         { status: 401 }

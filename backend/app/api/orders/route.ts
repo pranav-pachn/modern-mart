@@ -166,7 +166,7 @@ function jsonWithCors(body: unknown, status: number) {
 
 export async function GET(request: NextRequest) {
   // Protect all order data — admin only
-  const authError = requireAdminToken(request);
+  const authError = await requireAdminToken(request);
   if (authError) return authError;
 
   const limited = rateLimit(request, { limit: 30, windowMs: 60_000 });

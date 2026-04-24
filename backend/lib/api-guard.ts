@@ -8,37 +8,31 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 
 // ── 1. Admin auth guard ────────────────────────────────────────────────────────
 //
-// Admin-mutating routes (POST/PUT/DELETE on products, full order list) must
-// include the header:  x-admin-secret: <ADMIN_SECRET env var>
+// Primary auth: NextAuth JWT role=admin (cookie-backed).
+// Dev fallback only: x-admin-secret for local scripting convenience.
 //
-export function requireAdminToken(req: NextRequest): NextResponse | null {
-  const secret = process.env.ADMIN_SECRET;
-
-  // If no secret is configured we skip the check in development only
-  if (!secret) {
-    if (process.env.NODE_ENV === "production") {
-      console.error("[api-guard] ADMIN_SECRET env var is not set — rejecting request.");
-      return NextResponse.json(
-        { error: "Server is not configured for admin access." },
-        { status: 503 }
-      );
-    }
-    // dev: allow without a secret so devs don't get blocked during local work
+export async function requireAdminToken(req: NextRequest): Promise<NextResponse | null> {
+  const token = await getToken({ req, secret: process.env.AUTH_SECRET });
+  if ((token as { role?: string } | null)?.role === "admin") {
     return null;
   }
 
-  const provided = req.headers.get("x-admin-secret") ?? "";
-  if (provided !== secret) {
-    return NextResponse.json(
-      { error: "Unauthorized. Admin access required." },
-      { status: 401 }
-    );
+  const secret = process.env.ADMIN_SECRET;
+  if (process.env.NODE_ENV !== "production" && secret) {
+    const provided = req.headers.get("x-admin-secret") ?? "";
+    if (provided === secret) {
+      return null;
+    }
   }
 
-  return null; // null = authorized, continue
+  return NextResponse.json(
+    { error: "Unauthorized. Admin access required." },
+    { status: 401 }
+  );
 }
 
 // ── 2. In-memory rate limiter ──────────────────────────────────────────────────

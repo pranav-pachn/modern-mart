@@ -86,7 +86,7 @@ const productSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const authError = requireAdminToken(req);
+  const authError = await requireAdminToken(req);
   if (authError) return authError;
 
   try {

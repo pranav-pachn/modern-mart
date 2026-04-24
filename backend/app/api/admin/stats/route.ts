@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import clientPromise from "@/lib/mongodb";
 import { ORDERS_COLLECTION, type OrderDocument } from "@/models/Order";
+import { requireAdminToken } from "@/lib/api-guard";
 
 export const runtime = "nodejs";
 
@@ -37,8 +38,11 @@ function getYesterdayRange(startOfToday: Date) {
   return { startOfYesterday, endOfYesterday: startOfToday };
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const authError = await requireAdminToken(request);
+    if (authError) return authError;
+
     const client = await clientPromise;
     const db = client.db();
     const ordersCollection = db.collection<OrderDocument>(ORDERS_COLLECTION);

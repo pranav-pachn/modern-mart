@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import clientPromise from "@/lib/mongodb";
+import { getToken } from "next-auth/jwt";
 
 const ORDERS_COLLECTION = "orders";
 
@@ -19,11 +20,9 @@ type AdminStatsResponse = {
   }[];
 };
 
-function hasAdminSecret(request: NextRequest) {
-  const secret = process.env.NEXT_PUBLIC_ADMIN_SECRET || process.env.ADMIN_SECRET || "";
-  const provided = request.headers.get("x-admin-secret") ?? "";
-
-  return secret.length > 0 && provided === secret;
+async function isAdmin(request: NextRequest) {
+  const token = await getToken({ req: request, secret: process.env.AUTH_SECRET });
+  return (token as any)?.role === "admin";
 }
 
 function getTodayRange() {
@@ -45,7 +44,7 @@ function getYesterdayRange(startOfToday: Date) {
 
 export async function GET(request: NextRequest) {
   try {
-    if (!hasAdminSecret(request)) {
+    if (!(await isAdmin(request))) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

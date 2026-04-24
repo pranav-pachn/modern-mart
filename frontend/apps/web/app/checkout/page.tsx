@@ -103,7 +103,7 @@ export default function CheckoutPage() {
       const res = await fetch("/api/payment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: total }),
+        body: JSON.stringify({ amount: total, orderId }),
       });
 
       if (!res.ok) throw new Error("Payment init failed");
@@ -131,7 +131,7 @@ export default function CheckoutPage() {
             clearCart();
             router.push(`/order-success?orderId=${encodeURIComponent(orderId)}`);
           } catch {
-            setStatusMessage("Payment verification failed. Please contact support.");
+            setStatusMessage("Payment could not be verified. Your cart is safe; please contact support with your payment reference.");
             setIsSubmitting(false);
           }
         },

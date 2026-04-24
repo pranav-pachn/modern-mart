@@ -64,7 +64,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
 // ── PUT /api/products/[id] — admin only ──────────────────────────────────────
 export async function PUT(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   // Auth check
-  const authError = requireAdminToken(req);
+  const authError = await requireAdminToken(req);
   if (authError) return authError;
 
   // Rate limit mutations more tightly
@@ -129,7 +129,7 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
 // ── DELETE /api/products/[id] — admin only ────────────────────────────────────
 export async function DELETE(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   // Auth check
-  const authError = requireAdminToken(req);
+  const authError = await requireAdminToken(req);
   if (authError) return authError;
 
   const limited = rateLimit(req, { limit: 10, windowMs: 60_000 });

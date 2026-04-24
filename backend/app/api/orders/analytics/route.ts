@@ -16,7 +16,7 @@ export async function OPTIONS() {
 }
 
 export async function GET(request: NextRequest) {
-  const authError = requireAdminToken(request);
+  const authError = await requireAdminToken(request);
   if (authError) return authError;
 
   const client = await clientPromise;
