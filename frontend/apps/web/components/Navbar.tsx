@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { syncHistoryOnLogin } from "@/lib/ai-history";
 import { useCart } from "@/store/cart";
-import { ShoppingCart, Sparkles, LayoutDashboard, LogOut, User, X, Menu, MapPin } from "lucide-react";
+import { ShoppingCart, Sparkles, LayoutDashboard, LogOut, User, X, Menu, MapPin, Package } from "lucide-react";
 
 export default function Navbar() {
   const { data: session, status } = useSession();
@@ -162,6 +162,15 @@ export default function Navbar() {
                     My Profile & Addresses
                   </Link>
                   <Link
+                    href="/orders"
+                    className="dropdown-item"
+                    role="menuitem"
+                    onClick={() => setDropdownOpen(false)}
+                  >
+                    <Package className="h-4 w-4" />
+                    My Orders
+                  </Link>
+                  <Link
                     href="/cart"
                     className="dropdown-item"
                     role="menuitem"
@@ -231,9 +240,14 @@ export default function Navbar() {
             </Link>
           )}
           {status === "authenticated" && (
-            <Link href="/profile" className="mobile-nav-link" onClick={() => setMenuOpen(false)}>
-              👤 My Profile & Addresses
-            </Link>
+            <>
+              <Link href="/profile" className="mobile-nav-link" onClick={() => setMenuOpen(false)}>
+                👤 My Profile & Addresses
+              </Link>
+              <Link href="/orders" className="mobile-nav-link" onClick={() => setMenuOpen(false)}>
+                📦 My Orders
+              </Link>
+            </>
           )}
 
           <div className="dropdown-divider my-2" />

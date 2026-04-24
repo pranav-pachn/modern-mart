@@ -65,7 +65,7 @@ export default function OrderTrackingPage() {
   useEffect(() => {
     const fetchOrder = async () => {
       try {
-        const res = await fetch(`/api/orders/${id}`);
+        const res = await fetch(`/api/user/orders/${id}`);
         if (!res.ok) {
           throw new Error("Failed to load order details");
         }

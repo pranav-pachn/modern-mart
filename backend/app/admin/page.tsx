@@ -49,6 +49,11 @@ function formatOrderTime(isoDate: string) {
   });
 }
 
+function formatOrderLabel(id: string) {
+  const shortId = id.slice(-4).toUpperCase();
+  return `Order #${shortId}`;
+}
+
 function StatCard({
   title,
   value,
@@ -243,8 +248,8 @@ export default function AdminOverviewPage() {
           No data available
         </div>
       ) : (
-        <section className="grid gap-4 xl:grid-cols-[2fr_1fr]">
-          <div className="grid gap-4 sm:grid-cols-2">
+        <>
+          <section className="grid gap-4 sm:grid-cols-2">
             {cards.map((card) => (
               <StatCard
                 key={card.title}
@@ -257,9 +262,9 @@ export default function AdminOverviewPage() {
                 backgroundClass={card.backgroundClass}
               />
             ))}
-          </div>
+          </section>
 
-          <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <section className="mt-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <h2 className="text-base font-semibold text-slate-900">Recent Orders</h2>
             <p className="mt-1 text-xs text-slate-500">Latest activity from your customers</p>
 
@@ -268,21 +273,26 @@ export default function AdminOverviewPage() {
                 <p className="text-sm text-slate-500">No recent orders available.</p>
               ) : (
                 stats.recentOrders.map((order) => (
-                  <div key={order.id} className="rounded-xl border border-slate-100 bg-slate-50 p-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="truncate text-sm font-semibold text-slate-900">{order.userName}</p>
-                      <span className="text-xs text-slate-500">{formatOrderTime(order.createdAt)}</span>
+                  <div key={order.id} className="rounded-xl border border-slate-100 bg-slate-50 p-4 transition-all hover:border-slate-200 hover:bg-white">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-slate-900">{formatOrderLabel(order.id)}</p>
+                        <p className="mt-0.5 text-xs text-slate-500">{order.userName}</p>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm">
+                        <span className="font-semibold text-emerald-700">{formatCurrency(order.total)}</span>
+                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold capitalize text-slate-600">
+                          {order.status}
+                        </span>
+                      </div>
                     </div>
-                    <div className="mt-1 flex items-center justify-between gap-2">
-                      <span className="text-xs capitalize text-slate-600">{order.status}</span>
-                      <span className="text-sm font-semibold text-emerald-700">{formatCurrency(order.total)}</span>
-                    </div>
+                    <div className="mt-2 text-xs text-slate-500">Placed at {formatOrderTime(order.createdAt)}</div>
                   </div>
                 ))
               )}
             </div>
-          </aside>
-        </section>
+          </section>
+        </>
       )}
     </main>
   );

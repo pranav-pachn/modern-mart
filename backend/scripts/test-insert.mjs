@@ -36,12 +36,13 @@ async function run() {
       userName: "Pranav",
       phone: "1234567890",
       address: "Some Address",
+      deliverySlot: "Morning",
+      subtotal: 10,
       items: [{ productId: "abc", name: "Tomato", price: 10, quantity: 1 }],
       total: 10,
       status: "pending",
       paymentMethod: "COD",
       paymentStatus: "pending",
-      paymentId: undefined,
       createdAt: new Date()
     };
     await db.collection("orders").insertOne(order);

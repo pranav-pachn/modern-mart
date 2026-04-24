@@ -35,6 +35,8 @@ const orderValidator = {
     additionalProperties: false,
     properties: {
       _id: { bsonType: "objectId" },
+      userId: { bsonType: "string" },
+      userEmail: { bsonType: "string" },
       userName: { bsonType: "string", minLength: 1 },
       phone: { bsonType: "string", minLength: 1 },
       address: { bsonType: "string", minLength: 1 },
@@ -91,6 +93,8 @@ try {
         $replaceRoot: {
           newRoot: {
           _id: "$_id",
+          userId: { $ifNull: ["$userId", "$$REMOVE"] },
+          userEmail: { $ifNull: ["$userEmail", "$$REMOVE"] },
           userName: { $ifNull: ["$userName", "Guest Customer"] },
           phone: { $ifNull: ["$phone", "Not provided"] },
           address: { $ifNull: ["$address", "Not provided"] },

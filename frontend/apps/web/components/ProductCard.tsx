@@ -102,30 +102,30 @@ export default function ProductCard({
       {/* Info */}
       <div className="flex flex-1 flex-col gap-1.5 p-4 pt-3">
         {product.category && (
-          <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600">
+          <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-emerald-600">
             {product.category}
           </span>
         )}
         <Link
           href={`/product/${productId}`}
-          className="text-sm font-bold text-gray-900 leading-snug line-clamp-2 hover:text-emerald-700 transition-colors"
+          className="text-xs sm:text-sm font-bold text-gray-900 leading-snug line-clamp-2 hover:text-emerald-700 transition-colors"
         >
           {product.name}
         </Link>
 
-        <div className="mt-auto pt-3 flex items-center justify-between gap-2">
-          <p className="text-lg font-extrabold text-gray-900">₹{product.price}</p>
+        <div className="mt-auto pt-2 sm:pt-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1.5 sm:gap-2">
+          <p className="text-base sm:text-lg font-extrabold text-gray-900">₹{product.price}</p>
 
           {!inStock ? (
             <button
               type="button"
               disabled
-              className="flex items-center gap-1.5 rounded-xl bg-gray-100 px-3 py-2 text-xs font-bold text-gray-400 cursor-not-allowed"
+              className="flex w-full sm:w-auto items-center justify-center gap-1 rounded-xl bg-gray-100 px-2 py-2 text-[10px] sm:text-xs font-bold text-gray-400 cursor-not-allowed"
             >
               Add
             </button>
           ) : cartItem ? (
-            <div className="flex h-9 items-center justify-between rounded-xl border border-emerald-600 bg-white overflow-hidden w-[90px]">
+            <div className="flex h-8 sm:h-9 items-center justify-between rounded-xl border border-emerald-600 bg-white overflow-hidden w-full sm:w-[90px]">
               <button
                 onClick={(e) => {
                   e.preventDefault();
@@ -158,16 +158,16 @@ export default function ProductCard({
             <button
               type="button"
               onClick={handleAddClick}
-              className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-all duration-200 ${
+              className={`flex w-full sm:w-auto items-center justify-center gap-1 sm:gap-1.5 rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs font-bold transition-all duration-200 ${
                 isAdded
                   ? "bg-emerald-500 text-white scale-95"
                   : "bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95 shadow-sm"
               }`}
             >
               {isAdded ? (
-                <><Check className="h-3.5 w-3.5" /> Added</>
+                <><Check className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> <span className="sm:inline">Added</span></>
               ) : (
-                <><ShoppingBag className="h-3.5 w-3.5" /> Add</>
+                <><ShoppingBag className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> <span className="sm:inline">Add</span></>
               )}
             </button>
           )}

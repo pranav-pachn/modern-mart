@@ -11,6 +11,8 @@ export type OrderItem = {
 
 export type OrderDocument = {
   _id?: ObjectId;
+  userId?: string;
+  userEmail?: string;
   userName: string;
   phone: string;
   address: string;
@@ -45,6 +47,12 @@ export const orderValidator = {
     properties: {
       _id: {
         bsonType: "objectId",
+      },
+      userId: {
+        bsonType: "string",
+      },
+      userEmail: {
+        bsonType: "string",
       },
       userName: {
         bsonType: "string",

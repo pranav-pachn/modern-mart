@@ -486,6 +486,7 @@ export default function ProfilePage() {
             {[
               { href: "/shop", label: "Browse Shop", emoji: "🛍️" },
               { href: "/cart", label: "View Cart", emoji: "🛒" },
+              { href: "/orders", label: "My Orders", emoji: "📦" },
               { href: "/ai", label: "AI Grocery", emoji: "✨" },
               { href: "/ai-history", label: "AI History", emoji: "📋" },
               { href: "/checkout", label: "Checkout", emoji: "📦" },

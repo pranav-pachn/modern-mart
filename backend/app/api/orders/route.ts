@@ -42,6 +42,8 @@ const deliverySlotSchema = z
   .pipe(z.enum(["Morning", "Afternoon", "Evening"]));
 
 const orderSchema = z.object({
+  userId: z.string().min(1).optional(),
+  userEmail: z.string().email().optional(),
   userName: z.string().min(1, "Name is required"),
   phone: z.string().min(1, "Phone is required"),
   address: z.string().min(1, "Address is required"),
@@ -69,6 +71,8 @@ export async function POST(request: NextRequest) {
     }
 
     const {
+      userId,
+      userEmail,
       userName,
       phone,
       address,
@@ -91,7 +95,7 @@ export async function POST(request: NextRequest) {
 
     const paymentStatus = "pending";
 
-    const order: OrderDocument = {
+    const order: Omit<OrderDocument, "_id"> = {
       userName,
       phone,
       address,
@@ -102,9 +106,11 @@ export async function POST(request: NextRequest) {
       status: "pending",
       paymentMethod,
       paymentStatus,
-      notes: notes?.trim() || undefined,
       createdAt: new Date(),
     };
+    if (userId?.trim()) order.userId = userId.trim();
+    if (userEmail?.trim()) order.userEmail = userEmail.trim();
+    if (notes?.trim()) order.notes = notes.trim();
 
 
     const client = await clientPromise;
@@ -136,8 +142,11 @@ export async function POST(request: NextRequest) {
       },
       201
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error("Order creation failed", error);
+    if (error.code === 121) {
+      console.error(JSON.stringify(error.errInfo, null, 2));
+    }
 
     return jsonWithCors(
       {

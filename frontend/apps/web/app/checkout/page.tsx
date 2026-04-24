@@ -155,6 +155,8 @@ export default function CheckoutPage() {
     const userName = (formData?.get("name") as string) ?? deliveryDetails.userName;
     const phone = (formData?.get("phone") as string) ?? deliveryDetails.phone;
     const address = (formData?.get("address") as string) ?? deliveryDetails.address;
+    const userId = session?.user && typeof session.user === "object" ? (session.user as { id?: string }).id : undefined;
+    const userEmail = session?.user?.email ?? undefined;
 
     const normalizedPaymentMethod = paymentMethod === "online" ? "ONLINE" : "COD";
 
@@ -162,6 +164,8 @@ export default function CheckoutPage() {
       userName,
       phone,
       address,
+      userId,
+      userEmail,
       deliverySlot,
       subtotal: Number(subtotal),
       items: items.map((item) => ({
