@@ -9,6 +9,15 @@ type AdminStatsResponse = {
   todayOrders: number;
   pendingOrders: number;
   totalRevenue: number;
+  todayOrdersDelta: number;
+  revenueDeltaPercent: number;
+  recentOrders: {
+    id: string;
+    userName: string;
+    total: number;
+    status: string;
+    createdAt: string;
+  }[];
 };
 
 function getTodayRange() {
@@ -22,6 +31,12 @@ function getTodayRange() {
   return { startOfToday, startOfTomorrow };
 }
 
+function getYesterdayRange(startOfToday: Date) {
+  const startOfYesterday = new Date(startOfToday);
+  startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+  return { startOfYesterday, endOfYesterday: startOfToday };
+}
+
 export async function GET() {
   try {
     const client = await clientPromise;
@@ -29,8 +44,18 @@ export async function GET() {
     const ordersCollection = db.collection<OrderDocument>(ORDERS_COLLECTION);
 
     const { startOfToday, startOfTomorrow } = getTodayRange();
+    const { startOfYesterday, endOfYesterday } = getYesterdayRange(startOfToday);
 
-    const [totalOrders, todayOrders, pendingOrders, revenueDocs] = await Promise.all([
+    const [
+      totalOrders,
+      todayOrders,
+      yesterdayOrders,
+      pendingOrders,
+      revenueDocs,
+      todayRevenueDocs,
+      yesterdayRevenueDocs,
+      recentOrderDocs,
+    ] = await Promise.all([
       ordersCollection.countDocuments(),
       ordersCollection.countDocuments({
         createdAt: {
@@ -38,7 +63,17 @@ export async function GET() {
           $lt: startOfTomorrow,
         },
       }),
-      ordersCollection.countDocuments({ status: "pending" }),
+      ordersCollection.countDocuments({
+        createdAt: {
+          $gte: startOfYesterday,
+          $lt: endOfYesterday,
+        },
+      }),
+      ordersCollection.countDocuments({
+        $expr: {
+          $eq: [{ $toLower: { $ifNull: ["$status", ""] } }, "pending"],
+        },
+      }),
       ordersCollection
         .aggregate<{ totalRevenue: number }>([
           {
@@ -49,15 +84,87 @@ export async function GET() {
           },
         ])
         .toArray(),
+      ordersCollection
+        .aggregate<{ totalRevenue: number }>([
+          {
+            $match: {
+              createdAt: {
+                $gte: startOfToday,
+                $lt: startOfTomorrow,
+              },
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              totalRevenue: { $sum: "$total" },
+            },
+          },
+        ])
+        .toArray(),
+      ordersCollection
+        .aggregate<{ totalRevenue: number }>([
+          {
+            $match: {
+              createdAt: {
+                $gte: startOfYesterday,
+                $lt: endOfYesterday,
+              },
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              totalRevenue: { $sum: "$total" },
+            },
+          },
+        ])
+        .toArray(),
+      ordersCollection
+        .find(
+          {},
+          {
+            projection: {
+              _id: 1,
+              userName: 1,
+              total: 1,
+              status: 1,
+              createdAt: 1,
+            },
+          }
+        )
+        .sort({ createdAt: -1 })
+        .limit(6)
+        .toArray(),
     ]);
 
     const totalRevenue = Number(revenueDocs[0]?.totalRevenue ?? 0);
+    const todayRevenue = Number(todayRevenueDocs[0]?.totalRevenue ?? 0);
+    const yesterdayRevenue = Number(yesterdayRevenueDocs[0]?.totalRevenue ?? 0);
+    const todayOrdersDelta = todayOrders - yesterdayOrders;
+    const revenueDeltaPercent =
+      yesterdayRevenue > 0
+        ? ((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100
+        : todayRevenue > 0
+          ? 100
+          : 0;
+
+    const recentOrders = recentOrderDocs.map((order) => ({
+      id: order._id?.toString?.() ?? "",
+      userName: order.userName ?? "Guest",
+      total: Number(order.total ?? 0),
+      status: String(order.status ?? "pending"),
+      createdAt: new Date(order.createdAt ?? new Date()).toISOString(),
+    }));
 
     const response: AdminStatsResponse = {
       totalOrders,
       todayOrders,
       pendingOrders,
       totalRevenue: Number.isFinite(totalRevenue) ? totalRevenue : 0,
+      todayOrdersDelta,
+      revenueDeltaPercent,
+      recentOrders,
     };
 
     return NextResponse.json(response, { status: 200 });

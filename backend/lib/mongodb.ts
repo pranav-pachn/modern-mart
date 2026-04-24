@@ -1,10 +1,7 @@
 import { MongoClient } from "mongodb";
 
-const uri = process.env.MONGODB_URI;
-
-if (!uri) {
-  throw new Error("Missing MONGODB_URI environment variable.");
-}
+const rawUri = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/grocery-mart";
+const uri = rawUri.replace("mongodb://localhost", "mongodb://127.0.0.1");
 
 type MongoGlobal = typeof globalThis & {
   _mongoClientPromise?: Promise<MongoClient>;
@@ -12,8 +9,22 @@ type MongoGlobal = typeof globalThis & {
 
 const globalForMongo = globalThis as MongoGlobal;
 
-const clientPromise =
-  globalForMongo._mongoClientPromise ?? new MongoClient(uri).connect();
+const clientPromise = (async () => {
+  if (globalForMongo._mongoClientPromise) {
+    try {
+      return await globalForMongo._mongoClientPromise;
+    } catch {
+      globalForMongo._mongoClientPromise = undefined;
+    }
+  }
+
+  const client = new MongoClient(uri, {
+    serverSelectionTimeoutMS: 5000,
+  });
+  const nextPromise = client.connect();
+  globalForMongo._mongoClientPromise = nextPromise;
+  return await nextPromise;
+})();
 
 if (process.env.NODE_ENV !== "production") {
   globalForMongo._mongoClientPromise = clientPromise;

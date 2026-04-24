@@ -3,6 +3,9 @@ import process from "node:process"
 import { fileURLToPath } from "node:url"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
+// Frontend and backend run on different ports in local dev.
+// Default backend target must not point to the frontend itself.
+const backendApiUrl = process.env.BACKEND_API_URL || "http://localhost:3001"
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -26,31 +29,31 @@ const nextConfig = {
         source: "/api/products/:path*",
         destination: process.env.PRODUCTS_API_URL 
           ? `${process.env.PRODUCTS_API_URL}/:path*`
-          : "http://localhost:3001/api/products/:path*",
+          : `${backendApiUrl}/api/products/:path*`,
       },
       {
         source: "/api/products",
-        destination: process.env.PRODUCTS_API_URL ?? "http://localhost:3001/api/products",
+        destination: process.env.PRODUCTS_API_URL ?? `${backendApiUrl}/api/products`,
       },
       {
         source: "/api/orders/analytics",
         destination: process.env.ORDERS_API_URL
           ? `${process.env.ORDERS_API_URL}/analytics`
-          : "http://localhost:3001/api/orders/analytics",
+          : `${backendApiUrl}/api/orders/analytics`,
       },
       {
         source: "/api/orders/:path*",
         destination: process.env.ORDERS_API_URL 
           ? `${process.env.ORDERS_API_URL}/:path*` 
-          : "http://localhost:3001/api/orders/:path*",
+          : `${backendApiUrl}/api/orders/:path*`,
       },
       {
         source: "/api/health/db",
-        destination: process.env.HEALTH_API_URL ?? "http://localhost:3001/api/health/db",
+        destination: process.env.HEALTH_API_URL ?? `${backendApiUrl}/api/health/db`,
       },
       {
         source: "/api/payment",
-        destination: process.env.PAYMENT_API_URL ?? "http://localhost:3001/api/payment",
+        destination: process.env.PAYMENT_API_URL ?? `${backendApiUrl}/api/payment`,
       },
       {
         // ai history is handled by the frontend API route directly — do NOT proxy to backend
@@ -61,11 +64,11 @@ const nextConfig = {
         source: "/api/ai/:path*",
         destination: process.env.AI_API_URL 
           ? `${process.env.AI_API_URL}/:path*`
-          : "http://localhost:3001/api/ai/:path*",
+          : `${backendApiUrl}/api/ai/:path*`,
       },
       {
         source: "/api/ai",
-        destination: process.env.AI_API_URL ?? "http://localhost:3001/api/ai",
+        destination: process.env.AI_API_URL ?? `${backendApiUrl}/api/ai`,
       },
     ]
   },
