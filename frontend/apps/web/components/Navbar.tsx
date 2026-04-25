@@ -69,7 +69,7 @@ export default function Navbar() {
           <Link
             href="/cart"
             aria-label={`Cart, ${cartCount} item${cartCount !== 1 ? "s" : ""}`}
-            className="relative inline-flex items-center justify-center h-10 w-10 rounded-xl border border-gray-200 bg-white text-gray-700 transition hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300"
+            className="relative inline-flex items-center justify-center h-11 w-11 rounded-xl border border-gray-200 bg-white text-gray-700 transition hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300"
           >
             <ShoppingCart className="h-4.5 w-4.5" style={{ width: "18px", height: "18px" }} />
             {cartCount > 0 && (

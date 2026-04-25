@@ -94,7 +94,7 @@ export default function CartPage() {
                         <button
                           type="button"
                           onClick={() => decreaseQuantity(item.id)}
-                          className="h-9 w-9 text-lg font-bold text-zinc-700 transition hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                          className="h-11 w-11 sm:h-9 sm:w-9 text-lg font-bold text-zinc-700 transition hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800"
                         >
                           -
                         </button>
@@ -104,7 +104,7 @@ export default function CartPage() {
                         <button
                           type="button"
                           onClick={() => increaseQuantity(item.id)}
-                          className="h-9 w-9 text-lg font-bold text-zinc-700 transition hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                          className="h-11 w-11 sm:h-9 sm:w-9 text-lg font-bold text-zinc-700 transition hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800"
                         >
                           +
                         </button>

@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { adminFetch } from "@/lib/admin-fetch";
-import { Clock3, IndianRupee, PackageCheck, RefreshCw, ShoppingCart } from "lucide-react";
+import Link from "next/link";
+import { Clock3, IndianRupee, PackageCheck, RefreshCw, ShoppingCart, ChevronRight } from "lucide-react";
 
 type AdminStats = {
   totalOrders: number;
@@ -45,10 +46,21 @@ function formatTrend(value: number, suffix = "") {
 }
 
 function formatOrderTime(isoDate: string) {
-  return new Date(isoDate).toLocaleTimeString("en-IN", {
+  return new Date(isoDate).toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function getStatusBadgeClass(status: string) {
+  const s = (status || "pending").toLowerCase();
+  if (s === "delivered") return "bg-emerald-100 text-emerald-700";
+  if (s === "out for delivery") return "bg-amber-100 text-amber-700";
+  if (s === "accepted") return "bg-blue-100 text-blue-700";
+  if (s === "cancelled") return "bg-red-100 text-red-700";
+  return "bg-gray-100 text-gray-600";
 }
 
 function StatCard({
@@ -253,28 +265,55 @@ export default function AdminDashboardPage() {
             ))}
           </div>
 
-          <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="text-base font-semibold text-slate-900">Recent Orders</h2>
-            <p className="mt-1 text-xs text-slate-500">Latest activity from your customers</p>
+          <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col">
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="text-base font-semibold text-slate-900">Recent Orders</h2>
+              <Link
+                href="/admin/orders"
+                className="text-xs font-semibold text-emerald-600 hover:text-emerald-800 flex items-center gap-1"
+              >
+                View All <ChevronRight className="h-3 w-3" />
+              </Link>
+            </div>
+            <p className="text-xs text-slate-500 mb-4">Latest activity from your customers</p>
 
-            <div className="mt-4 space-y-3">
+            <div className="flex-1 space-y-2">
               {stats.recentOrders.length === 0 ? (
-                <p className="text-sm text-slate-500">No recent orders available.</p>
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <span className="text-3xl mb-2">📭</span>
+                  <p className="text-sm text-slate-500">No orders yet.</p>
+                </div>
               ) : (
                 stats.recentOrders.map((order) => (
-                  <div key={order.id} className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                  <Link
+                    key={order.id}
+                    href="/admin/orders"
+                    className="group flex flex-col gap-1 rounded-xl border border-slate-100 bg-slate-50 p-3 transition hover:border-emerald-200 hover:bg-emerald-50/40"
+                  >
                     <div className="flex items-center justify-between gap-2">
-                      <p className="truncate text-sm font-semibold text-slate-900">{order.userName}</p>
-                      <span className="text-xs text-slate-500">{formatOrderTime(order.createdAt)}</span>
+                      <p className="truncate text-sm font-semibold text-slate-900 group-hover:text-emerald-800">
+                        {order.userName}
+                      </p>
+                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold capitalize ${getStatusBadgeClass(order.status)}`}>
+                        {order.status}
+                      </span>
                     </div>
-                    <div className="mt-1 flex items-center justify-between gap-2">
-                      <span className="text-xs capitalize text-slate-600">{order.status}</span>
-                      <span className="text-sm font-semibold text-emerald-700">{formatCurrency(order.total)}</span>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs text-slate-400">{formatOrderTime(order.createdAt)}</span>
+                      <span className="text-sm font-bold text-emerald-700">{formatCurrency(order.total)}</span>
                     </div>
-                  </div>
+                  </Link>
                 ))
               )}
             </div>
+
+            <Link
+              href="/admin/orders"
+              className="mt-4 flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:border-emerald-300 hover:text-emerald-700"
+            >
+              <ShoppingCart className="h-4 w-4" />
+              Manage All Orders
+            </Link>
           </aside>
         </section>
       )}

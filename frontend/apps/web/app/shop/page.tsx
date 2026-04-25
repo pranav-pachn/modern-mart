@@ -255,7 +255,7 @@ function ShopContent() {
                 <button
                   key={cat}
                   onClick={() => handleCategoryClick(cat)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all duration-150 border whitespace-nowrap ${
+                  className={`px-4 py-2 min-h-[40px] rounded-full text-xs sm:text-sm font-bold transition-all duration-150 border whitespace-nowrap flex items-center justify-center ${
                     activeCategory === cat
                       ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
                       : "bg-white text-gray-600 border-gray-200 hover:border-emerald-400 hover:text-emerald-700"
@@ -269,7 +269,7 @@ function ShopContent() {
             {/* Sort + filter toggle */}
             <button
               onClick={() => setShowFilters((v) => !v)}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold border transition-all duration-150 whitespace-nowrap ${
+              className={`flex items-center justify-center min-h-[40px] gap-1.5 px-4 py-2 rounded-full text-xs sm:text-sm font-bold border transition-all duration-150 whitespace-nowrap ${
                 showFilters || activeSort
                   ? "bg-violet-600 text-white border-violet-600"
                   : "bg-white text-gray-600 border-gray-200 hover:border-violet-400 hover:text-violet-700"

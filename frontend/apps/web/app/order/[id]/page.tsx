@@ -12,7 +12,8 @@ import {
   MapPin,
   Phone,
   User,
-  CreditCard
+  CreditCard,
+  Truck
 } from "lucide-react";
 
 type OrderItem = {
@@ -36,22 +37,25 @@ type Order = {
 };
 
 const STATUS_STEPS = [
-  { id: "placed", label: "Placed", icon: ShoppingBag },
+  { id: "placed", label: "Order Placed", icon: ShoppingBag },
   { id: "confirmed", label: "Confirmed", icon: Package },
+  { id: "out_for_delivery", label: "Out for Delivery", icon: Truck },
   { id: "delivered", label: "Delivered", icon: CheckCircle2 },
 ];
 
-function normalizeOrderStatus(status: string | undefined): "placed" | "confirmed" | "delivered" | "cancelled" {
+function normalizeOrderStatus(status: string | undefined): "placed" | "confirmed" | "out_for_delivery" | "delivered" | "cancelled" {
   const value = (status ?? "pending").toLowerCase();
   if (value === "delivered") return "delivered";
   if (value === "cancelled") return "cancelled";
-  if (["accepted", "confirmed", "packed", "out for delivery"].includes(value)) return "confirmed";
+  if (value === "out for delivery") return "out_for_delivery";
+  if (["accepted", "confirmed", "packed"].includes(value)) return "confirmed";
   return "placed";
 }
 
-function getStatusLabel(status: "placed" | "confirmed" | "delivered" | "cancelled") {
+function getStatusLabel(status: "placed" | "confirmed" | "out_for_delivery" | "delivered" | "cancelled") {
   if (status === "cancelled") return "Cancelled";
   if (status === "delivered") return "Delivered";
+  if (status === "out_for_delivery") return "Out for Delivery";
   if (status === "confirmed") return "Confirmed";
   return "Placed";
 }
@@ -119,7 +123,8 @@ export default function OrderTrackingPage() {
   
   let currentStepIndex = 0;
   if (currentStatus === "confirmed") currentStepIndex = 1;
-  else if (currentStatus === "delivered") currentStepIndex = 2;
+  else if (currentStatus === "out_for_delivery") currentStepIndex = 2;
+  else if (currentStatus === "delivered") currentStepIndex = 3;
 
   return (
     <main className="min-h-screen bg-zinc-50 px-4 py-8 sm:px-6 lg:px-8 pb-24">
@@ -127,11 +132,11 @@ export default function OrderTrackingPage() {
         {/* Header */}
         <div className="mb-8">
           <Link
-            href="/profile"
+            href="/orders"
             className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-zinc-500 transition hover:text-zinc-900"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Profile
+            My Orders
           </Link>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>

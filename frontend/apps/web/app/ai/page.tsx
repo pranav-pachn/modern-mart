@@ -259,7 +259,7 @@ export default function AIGroceryPage() {
                   key={p}
                   onClick={() => generateList(p)}
                   disabled={isLoading}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-medium text-zinc-600 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 disabled:pointer-events-none disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2 min-h-[44px] text-xs font-medium text-zinc-600 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 disabled:pointer-events-none disabled:opacity-50"
                 >
                   <ChefHat className="h-3.5 w-3.5" />
                   {p}
@@ -374,7 +374,7 @@ export default function AIGroceryPage() {
                         {/* Cart Controls */}
                         <div className="mt-3">
                           {cartItem ? (
-                            <div className="flex h-9 items-center justify-between rounded-xl bg-emerald-600 text-white">
+                            <div className="flex h-11 items-center justify-between rounded-xl bg-emerald-600 text-white">
                               <button
                                 onClick={() => decreaseQuantity(item.product!.id)}
                                 className="flex h-full w-10 items-center justify-center rounded-l-xl transition hover:bg-emerald-700"
@@ -392,7 +392,7 @@ export default function AIGroceryPage() {
                           ) : (
                             <button
                               onClick={() => { addToCart(item.product!); toast.success(`${item.product!.name} added to cart`); }}
-                              className="flex h-9 w-full items-center justify-center rounded-xl bg-zinc-900 text-sm font-semibold text-white transition hover:bg-zinc-700"
+                              className="flex h-11 w-full items-center justify-center rounded-xl bg-zinc-900 text-sm font-semibold text-white transition hover:bg-zinc-700"
                             >
                               Add to Cart
                             </button>
@@ -456,12 +456,12 @@ export default function AIGroceryPage() {
                             </div>
                             <div className="mt-3">
                               {cartItem ? (
-                                <div className="flex h-9 items-center justify-between rounded-xl bg-emerald-600 text-white">
+                                <div className="flex h-11 items-center justify-between rounded-xl bg-emerald-600 text-white">
                                   <button onClick={() => decreaseQuantity(item.product!.id)} className="flex h-full w-10 items-center justify-center rounded-l-xl transition hover:bg-emerald-700"><Minus className="h-4 w-4" /></button>
                                   <span className="text-sm font-bold">{cartItem.quantity}</span>
                                   <button onClick={() => increaseQuantity(item.product!.id)} className="flex h-full w-10 items-center justify-center rounded-r-xl transition hover:bg-emerald-700"><Plus className="h-4 w-4" /></button>
                                 </div>
-                              ) : <button onClick={() => { addToCart(item.product!); toast.success(`${item.product!.name} added to cart`); }} className="flex h-9 w-full items-center justify-center rounded-xl bg-zinc-900 text-sm font-semibold text-white transition hover:bg-zinc-700">Add to Cart</button>}
+                              ) : <button onClick={() => { addToCart(item.product!); toast.success(`${item.product!.name} added to cart`); }} className="flex h-11 w-full items-center justify-center rounded-xl bg-zinc-900 text-sm font-semibold text-white transition hover:bg-zinc-700">Add to Cart</button>}
                             </div>
                           </div>
                         ) : <p className="mt-4 text-xs font-medium text-red-400">Not available currently</p>}

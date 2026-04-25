@@ -120,12 +120,12 @@ export default function ProductCard({
             <button
               type="button"
               disabled
-              className="flex w-full sm:w-auto items-center justify-center gap-1 rounded-xl bg-gray-100 px-2 py-2 text-[10px] sm:text-xs font-bold text-gray-400 cursor-not-allowed"
+              className="flex w-full sm:w-auto h-10 sm:h-9 items-center justify-center gap-1 rounded-xl bg-gray-100 px-3 text-xs font-bold text-gray-400 cursor-not-allowed"
             >
               Add
             </button>
           ) : cartItem ? (
-            <div className="flex h-8 sm:h-9 items-center justify-between rounded-xl border border-emerald-600 bg-white overflow-hidden w-full sm:w-[90px]">
+            <div className="flex h-10 sm:h-9 items-center justify-between rounded-xl border border-emerald-600 bg-white overflow-hidden w-full sm:w-[100px]">
               <button
                 onClick={(e) => {
                   e.preventDefault();
@@ -134,7 +134,7 @@ export default function ProductCard({
                   }
                   decreaseQuantity(productId);
                 }}
-                className="flex h-full w-8 items-center justify-center transition hover:bg-emerald-50 text-emerald-700"
+                className="flex h-full w-10 sm:w-8 items-center justify-center transition hover:bg-emerald-50 text-emerald-700"
               >
                 <Minus className="h-3 w-3" />
               </button>
@@ -147,7 +147,7 @@ export default function ProductCard({
                   if (!maxReached) increaseQuantity(productId);
                 }}
                 disabled={maxReached}
-                className={`flex h-full w-8 items-center justify-center transition ${
+                className={`flex h-full w-10 sm:w-8 items-center justify-center transition ${
                   maxReached ? "text-gray-300 bg-gray-50 cursor-not-allowed" : "hover:bg-emerald-50 text-emerald-700"
                 }`}
               >
@@ -158,7 +158,7 @@ export default function ProductCard({
             <button
               type="button"
               onClick={handleAddClick}
-              className={`flex w-full sm:w-auto items-center justify-center gap-1 sm:gap-1.5 rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs font-bold transition-all duration-200 ${
+              className={`flex w-full sm:w-auto h-10 sm:h-9 items-center justify-center gap-1.5 rounded-xl px-4 text-xs font-bold transition-all duration-200 ${
                 isAdded
                   ? "bg-emerald-500 text-white scale-95"
                   : "bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95 shadow-sm"
