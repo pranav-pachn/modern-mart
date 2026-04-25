@@ -15,9 +15,14 @@ type AdminStats = {
   recentOrders: {
     id: string;
     userName: string;
+    phone: string;
     total: number;
     status: string;
     createdAt: string;
+    items: {
+      name: string;
+      quantity: number;
+    }[];
   }[];
 };
 
@@ -61,6 +66,26 @@ function getStatusBadgeClass(status: string) {
   if (s === "accepted") return "bg-blue-100 text-blue-700";
   if (s === "cancelled") return "bg-red-100 text-red-700";
   return "bg-gray-100 text-gray-600";
+}
+
+function isNewOrder(status: string) {
+  const s = (status || "pending").toLowerCase();
+  return ["pending", "placed", "accepted"].includes(s);
+}
+
+function formatPhone(phone: string) {
+  // Ensure Indian format
+  return phone.startsWith("91") ? phone : `91${phone}`;
+}
+
+function getWhatsAppLink(order: any) {
+  const phone = formatPhone(order.phone);
+  const message = encodeURIComponent(
+    `🛒 Order Confirmation\n\nHi ${order.userName},\n\nYour order (#${order.id}) has been received.\n\n🧾 Items:\n${order.items
+      .map((i: any) => `- ${i.name} x ${i.quantity}`)
+      .join("\n")}\n\n💰 Total: ₹${order.total}\n\nWe will deliver soon 🚚`
+  );
+  return `https://wa.me/${phone}?text=${message}`;
 }
 
 function StatCard({
@@ -317,26 +342,52 @@ export default function AdminDashboardPage() {
                   <p className="text-sm text-slate-500">No orders yet.</p>
                 </div>
               ) : (
-                stats.recentOrders.map((order) => (
-                  <Link
-                    key={order.id}
-                    href="/admin/orders"
-                    className="group flex flex-col gap-1 rounded-xl border border-slate-100 bg-slate-50 p-3 transition hover:border-emerald-200 hover:bg-emerald-50/40"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="truncate text-sm font-semibold text-slate-900 group-hover:text-emerald-800">
-                        {order.userName}
-                      </p>
-                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold capitalize ${getStatusBadgeClass(order.status)}`}>
-                        {order.status}
-                      </span>
+                stats.recentOrders.map((order) => {
+                  const newOrder = isNewOrder(order.status);
+                  return (
+                    <div
+                      key={order.id}
+                      className={`group flex flex-col gap-1 rounded-xl border p-3 transition ${
+                        newOrder
+                          ? "bg-red-50 border-red-200 hover:border-red-300 hover:bg-red-100/50"
+                          : "bg-slate-50 border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/40"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <p className={`truncate text-sm font-semibold ${newOrder ? "text-red-900" : "text-slate-900"} group-hover:text-emerald-800`}>
+                          {order.userName}
+                        </p>
+                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                          newOrder
+                            ? "bg-red-600 text-white animate-pulse"
+                            : `capitalize ${getStatusBadgeClass(order.status)}`
+                        }`}>
+                          {newOrder ? "New Order" : order.status}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs text-slate-400">{formatOrderTime(order.createdAt)}</span>
+                        <span className={`text-sm font-bold ${newOrder ? "text-red-700" : "text-emerald-700"}`}>{formatCurrency(order.total)}</span>
+                      </div>
+                      <div className="flex gap-2 mt-2">
+                        <a
+                          href={getWhatsAppLink(order)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          WhatsApp
+                        </a>
+                        <a
+                          href={`tel:${order.phone}`}
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Call
+                        </a>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs text-slate-400">{formatOrderTime(order.createdAt)}</span>
-                      <span className="text-sm font-bold text-emerald-700">{formatCurrency(order.total)}</span>
-                    </div>
-                  </Link>
-                ))
+                  );
+                })
               )}
             </div>
 
