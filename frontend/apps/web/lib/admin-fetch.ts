@@ -11,5 +11,15 @@ export async function adminFetch(
   url: string,
   init: RequestInit = {}
 ): Promise<Response> {
-  return fetch(url, init);
+  const headers = new Headers(init.headers ?? {});
+  const adminSecret = process.env.NEXT_PUBLIC_ADMIN_SECRET;
+
+  if (adminSecret && !headers.has("x-admin-secret")) {
+    headers.set("x-admin-secret", adminSecret);
+  }
+
+  return fetch(url, {
+    ...init,
+    headers,
+  });
 }

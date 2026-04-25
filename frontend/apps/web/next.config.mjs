@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url"
 const __dirname = dirname(fileURLToPath(import.meta.url))
 // Frontend and backend run on different ports in local dev.
 // Default backend target must not point to the frontend itself.
-const backendApiUrl = process.env.BACKEND_API_URL || "http://localhost:3001"
+const backendApiUrl = process.env.BACKEND_API_URL || "http://localhost:3000"
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -50,6 +50,12 @@ const nextConfig = {
       {
         source: "/api/health/db",
         destination: process.env.HEALTH_API_URL ?? `${backendApiUrl}/api/health/db`,
+      },
+      {
+        source: "/api/payment/:path*",
+        destination: process.env.PAYMENT_API_URL
+          ? `${process.env.PAYMENT_API_URL}/:path*`
+          : `${backendApiUrl}/api/payment/:path*`,
       },
       {
         source: "/api/payment",

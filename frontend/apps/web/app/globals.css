@@ -91,6 +91,9 @@ body {
   text-decoration: none;
   transition: all 0.15s;
 }
+.nav-link, .nav-signin-btn, .mobile-menu-btn, .mobile-nav-link, .dropdown-item {
+  min-height: 44px;
+}
 .nav-link:hover {
   background: #f1f5f9;
   color: var(--fg);
@@ -251,9 +254,17 @@ body {
 }
 
 @media (max-width: 640px) {
+  .navbar-inner {
+    padding: 0 14px;
+    gap: 12px;
+  }
   .navbar-links { display: none; }
   .mobile-menu-btn { display: flex; }
   .user-name { display: none; }
+  .navbar-auth { gap: 8px; }
+  .navbar-brand { min-width: 0; }
+  .brand-name { font-size: 15px; }
+  .mobile-nav { padding-inline: 12px; }
 }
 
 /* ════════════════════════════════

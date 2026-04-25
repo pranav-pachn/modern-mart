@@ -5,6 +5,14 @@ import { rateLimit } from "@/lib/api-guard";
 
 export const runtime = "nodejs";
 
+function isOnlinePaymentEnabled() {
+  return (
+    process.env.ENABLE_ONLINE_PAYMENTS === "true" &&
+    Boolean(process.env.RAZORPAY_KEY_ID) &&
+    Boolean(process.env.RAZORPAY_KEY_SECRET)
+  );
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -31,6 +39,13 @@ export async function POST(request: NextRequest) {
   if (limited) return limited;
 
   try {
+    if (!isOnlinePaymentEnabled()) {
+      return NextResponse.json(
+        { error: "Online payments are disabled." },
+        { status: 403, headers: corsHeaders }
+      );
+    }
+
     let rawBody: unknown;
     try {
       rawBody = await request.json();

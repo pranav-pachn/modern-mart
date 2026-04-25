@@ -2,16 +2,38 @@
 
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
-import { Package, Upload, Check } from "lucide-react";
+import { Package, Upload, Check, Zap, SlidersHorizontal } from "lucide-react";
 
 import { adminFetch } from "@/lib/admin-fetch";
 const CATEGORIES = ["Vegetables", "Fruits", "Dairy", "Beverages", "Snacks", "Bakery", "Household", "Staples", "Other"];
 
+const DEFAULT_PRODUCT_IMAGE =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAukB9VEu0hQAAAAASUVORK5CYII=";
+
 export default function AdminAddProduct() {
-  const [form, setForm] = useState({ name: "", price: "", category: "", image: "", stock: "", description: "", unit: "" });
+  const [form, setForm] = useState({
+    name: "",
+    price: "",
+    category: "vegetables",
+    image: "",
+    stock: "10",
+    description: "",
+    unit: "1 unit",
+  });
   const [preview, setPreview] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [quickMode, setQuickMode] = useState(true);
+  const [lastSaveSeconds, setLastSaveSeconds] = useState<number | null>(null);
+  const [entryStartedAt, setEntryStartedAt] = useState<number | null>(null);
+
+  const setField = (key: "name" | "price" | "category" | "image" | "stock" | "description" | "unit", value: string) => {
+    if (!entryStartedAt) {
+      setEntryStartedAt(Date.now());
+    }
+    setForm((f) => ({ ...f, [key]: value }));
+  };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -20,7 +42,7 @@ export default function AdminAddProduct() {
     const reader = new FileReader();
     reader.onloadend = () => {
       const result = reader.result as string;
-      setForm((f) => ({ ...f, image: result }));
+      setField("image", result);
       setPreview(result);
       setIsProcessing(false);
     };
@@ -29,29 +51,69 @@ export default function AdminAddProduct() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.image) { alert("Please upload a product image."); return; }
+    const startedAt = entryStartedAt ?? Date.now();
+    setIsSaving(true);
+
+    const payload = {
+      ...form,
+      image: form.image || DEFAULT_PRODUCT_IMAGE,
+      price: Number(form.price),
+      stock: Number(form.stock),
+    };
 
     const res = await adminFetch("/api/products", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, price: Number(form.price), stock: Number(form.stock) }),
+      body: JSON.stringify(payload),
     });
 
     if (res.ok) {
       setSuccess(true);
-      setForm({ name: "", price: "", category: "", image: "", stock: "", description: "", unit: "" });
+      setLastSaveSeconds(Number(((Date.now() - startedAt) / 1000).toFixed(1)));
+      setForm({ name: "", price: "", category: "vegetables", image: "", stock: "10", description: "", unit: "1 unit" });
+      setEntryStartedAt(null);
       setPreview(null);
       setTimeout(() => setSuccess(false), 3000);
     } else {
       alert("Failed to add product. Please check all fields and try again.");
     }
+
+    setIsSaving(false);
   };
 
   return (
     <div>
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Add Product</h1>
-        <p className="text-sm text-gray-500 mt-1">Add a new item to your store inventory.</p>
+        <p className="text-sm text-gray-500 mt-1">Quick mode is optimized to add a product in under 30 seconds.</p>
+      </div>
+
+      <div className="mb-5 flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          onClick={() => setQuickMode(true)}
+          className={`inline-flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold transition ${
+            quickMode ? "bg-emerald-600 text-white" : "border border-gray-200 bg-white text-gray-600"
+          }`}
+        >
+          <Zap className="h-3.5 w-3.5" />
+          Quick Add (Target: {"< 30s"})
+        </button>
+        <button
+          type="button"
+          onClick={() => setQuickMode(false)}
+          className={`inline-flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold transition ${
+            !quickMode ? "bg-gray-900 text-white" : "border border-gray-200 bg-white text-gray-600"
+          }`}
+        >
+          <SlidersHorizontal className="h-3.5 w-3.5" />
+          Detailed Add
+        </button>
+        {lastSaveSeconds !== null ? (
+          <span className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
+            Last add: {lastSaveSeconds}s
+          </span>
+        ) : null}
       </div>
 
       <div className="max-w-xl">
@@ -93,6 +155,18 @@ export default function AdminAddProduct() {
                   />
                 </label>
                 {isProcessing && <p className="text-xs text-blue-500 mt-1.5 font-medium">Processing image…</p>}
+                {!preview && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setField("image", DEFAULT_PRODUCT_IMAGE);
+                      setPreview(DEFAULT_PRODUCT_IMAGE);
+                    }}
+                    className="mt-2 text-xs font-semibold text-emerald-600 hover:text-emerald-700"
+                  >
+                    Use default image (faster)
+                  </button>
+                )}
                 {preview && (
                   <button
                     type="button"
@@ -111,13 +185,13 @@ export default function AdminAddProduct() {
                   className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-50 transition-all"
                   placeholder="e.g., Fresh Tomatoes"
                   value={form.name}
-                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                  onChange={(e) => setField("name", e.target.value)}
                   required
                 />
               </div>
 
               {/* Price + Stock */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Price (₹)</label>
                   <input
@@ -127,7 +201,7 @@ export default function AdminAddProduct() {
                     className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-50 transition-all"
                     placeholder="e.g., 40"
                     value={form.price}
-                    onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
+                    onChange={(e) => setField("price", e.target.value)}
                     required
                   />
                 </div>
@@ -139,7 +213,7 @@ export default function AdminAddProduct() {
                     className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-50 transition-all"
                     placeholder="e.g., 100"
                     value={form.stock}
-                    onChange={(e) => setForm((f) => ({ ...f, stock: e.target.value }))}
+                    onChange={(e) => setField("stock", e.target.value)}
                     required
                   />
                 </div>
@@ -151,7 +225,7 @@ export default function AdminAddProduct() {
                 <select
                   className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-50 bg-white transition-all"
                   value={form.category}
-                  onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+                  onChange={(e) => setField("category", e.target.value)}
                   required
                 >
                   <option value="" disabled>Select a category…</option>
@@ -162,36 +236,40 @@ export default function AdminAddProduct() {
               </div>
 
               {/* Unit */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Unit</label>
-                <input
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-50 transition-all"
-                  placeholder="e.g., 1 kg, 500g, 1 piece"
-                  value={form.unit}
-                  onChange={(e) => setForm((f) => ({ ...f, unit: e.target.value }))}
-                />
-              </div>
+              {!quickMode ? (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Unit</label>
+                  <input
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-50 transition-all"
+                    placeholder="e.g., 1 kg, 500g, 1 piece"
+                    value={form.unit}
+                    onChange={(e) => setField("unit", e.target.value)}
+                  />
+                </div>
+              ) : null}
 
               {/* Description */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Description</label>
-                <textarea
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-50 transition-all min-h-[100px]"
-                  placeholder="Product description..."
-                  value={form.description}
-                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                />
-              </div>
+              {!quickMode ? (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Description</label>
+                  <textarea
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-50 transition-all min-h-[100px]"
+                    placeholder="Product description..."
+                    value={form.description}
+                    onChange={(e) => setField("description", e.target.value)}
+                  />
+                </div>
+              ) : null}
 
               {/* Submit */}
               <button
                 type="submit"
-                disabled={isProcessing}
-                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white text-sm font-bold rounded-lg transition-colors mt-2"
+                disabled={isProcessing || isSaving}
+                className="w-full min-h-11 flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white text-sm font-bold rounded-lg transition-colors mt-2"
               >
                 {success
                   ? <><Check className="w-4 h-4" /> Product Added!</>
-                  : isProcessing
+                  : isProcessing || isSaving
                     ? "Please wait…"
                     : "Save Product"
                 }

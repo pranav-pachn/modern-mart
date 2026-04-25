@@ -122,11 +122,17 @@ export async function POST(req: NextRequest) {
       category: parsed.data.category,
       image: finalImagePath,
       stock: new Int32(parsed.data.stock),
-      description: parsed.data.description,
-      unit: parsed.data.unit,
       createdAt: now,
       updatedAt: now,
     };
+
+    if (typeof parsed.data.description === "string") {
+      productToInsert.description = parsed.data.description;
+    }
+
+    if (typeof parsed.data.unit === "string") {
+      productToInsert.unit = parsed.data.unit;
+    }
 
     const result = await db.collection<ProductDocument>(PRODUCTS_COLLECTION).insertOne(productToInsert);
 

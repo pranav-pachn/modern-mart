@@ -22,6 +22,8 @@ import toast from "react-hot-toast";
 const ORDERS_API_URL = "/api/orders";
 const ADDRESS_API_URL = "/api/user/address";
 const MINIMUM_ORDER_VALUE = 200;
+const ONLINE_PAYMENTS_ENABLED = process.env.NEXT_PUBLIC_ENABLE_ONLINE_PAYMENTS === "true";
+const HAS_RAZORPAY_KEY = Boolean(process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID);
 
 const DELIVERY_SLOTS = ["Morning", "Afternoon", "Evening"] as const;
 
@@ -62,6 +64,7 @@ export default function CheckoutPage() {
 
   const isMinimumOrderMet = subtotal >= MINIMUM_ORDER_VALUE;
   const minimumOrderShortfall = Math.max(0, MINIMUM_ORDER_VALUE - subtotal);
+  const canUseOnlinePayment = ONLINE_PAYMENTS_ENABLED && HAS_RAZORPAY_KEY;
 
   useEffect(() => {
     if (session) {
@@ -409,7 +412,9 @@ export default function CheckoutPage() {
                 <div className="grid gap-3 sm:grid-cols-2">
                   {[
                     { value: "cod", label: "Cash on Delivery", sub: "Pay when order arrives" },
-                    { value: "online", label: "Online Payment", sub: "UPI / Card / Net Banking" },
+                    ...(canUseOnlinePayment
+                      ? [{ value: "online", label: "Online Payment", sub: "UPI / Card / Net Banking" }]
+                      : []),
                   ].map((opt) => (
                     <label
                       key={opt.value}
@@ -434,6 +439,11 @@ export default function CheckoutPage() {
                     </label>
                   ))}
                 </div>
+                {!canUseOnlinePayment && (
+                  <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+                    Cash on Delivery is active for this MVP. Enable online payments only after Razorpay is fully configured.
+                  </p>
+                )}
               </fieldset>
 
               {/* Delivery slot */}

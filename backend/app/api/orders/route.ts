@@ -1,13 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import clientPromise from "@/lib/mongodb";
-import { ORDERS_COLLECTION, type OrderDocument, type OrderItem } from "@/models/Order";
+import { ORDERS_COLLECTION, type OrderDocument } from "@/models/Order";
 import { PRODUCTS_COLLECTION, type ProductDocument } from "@/models/Product";
 import { z } from "zod";
 import { requireAdminToken, rateLimit } from "@/lib/api-guard";
 
 export const runtime = "nodejs";
 const MINIMUM_ORDER_VALUE = 200;
+
+function isOnlinePaymentEnabled() {
+  return (
+    process.env.ENABLE_ONLINE_PAYMENTS === "true" &&
+    Boolean(process.env.RAZORPAY_KEY_ID) &&
+    Boolean(process.env.RAZORPAY_KEY_SECRET)
+  );
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -64,7 +72,7 @@ export async function POST(request: NextRequest) {
       return jsonWithCors(
         {
           error: "Validation failed",
-          fields: parsed.error.issues.map((e: any) => `${e.path.join(".")}: ${e.message}`),
+          fields: parsed.error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`),
         },
         400
       );
@@ -84,6 +92,15 @@ export async function POST(request: NextRequest) {
       notes,
     } = parsed.data;
 
+    if (paymentMethod === "ONLINE" && !isOnlinePaymentEnabled()) {
+      return jsonWithCors(
+        {
+          error: "Online payments are currently unavailable. Please choose Cash on Delivery.",
+        },
+        400
+      );
+    }
+
     if (subtotal < MINIMUM_ORDER_VALUE) {
       return jsonWithCors(
         {
@@ -93,7 +110,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const paymentStatus = "pending";
+    const isOnlineOrder = paymentMethod === "ONLINE";
+    const paymentStatus = isOnlineOrder ? "pending" : "cod_pending";
+    const status = isOnlineOrder ? "pending" : "placed";
 
     const order: Omit<OrderDocument, "_id"> = {
       userName,
@@ -103,7 +122,7 @@ export async function POST(request: NextRequest) {
       subtotal,
       items,
       total: total as number,
-      status: "pending",
+      status,
       paymentMethod,
       paymentStatus,
       createdAt: new Date(),
@@ -142,9 +161,9 @@ export async function POST(request: NextRequest) {
       },
       201
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Order creation failed", error);
-    if (error.code === 121) {
+    if (isMongoValidatorError(error)) {
       console.error(JSON.stringify(error.errInfo, null, 2));
     }
 
@@ -211,7 +230,7 @@ export async function GET(request: NextRequest) {
   const skip  = (page - 1) * limit;
   const status = searchParams.get("status") ?? "";
 
-  const query: any = {};
+  const query: Partial<Pick<OrderDocument, "status">> = {};
   if (status) query.status = status;
 
   const [orders, total] = await Promise.all([
@@ -230,3 +249,8 @@ export async function GET(request: NextRequest) {
   );
 }
 
+function isMongoValidatorError(
+  error: unknown
+): error is { code: number; errInfo?: unknown } {
+  return typeof error === "object" && error !== null && "code" in error && (error as { code?: unknown }).code === 121;
+}

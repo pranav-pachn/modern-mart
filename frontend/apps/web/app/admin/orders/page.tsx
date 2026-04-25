@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { adminFetch } from "@/lib/admin-fetch";
-import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
-import { Badge } from "@workspace/ui/components/badge";
+import { Card, CardContent } from "@workspace/ui/components/card";
 import { ChevronRight, MessageCircle, PhoneCall } from "lucide-react";
 
 const STATUS_FLOW: Record<string, { next: string; label: string; color: string; nextLabel: string }> = {
@@ -39,11 +38,37 @@ function getOrderId(order: any) {
   return typeof order?._id === "string" ? order._id : String(order?._id ?? "");
 }
 
+function formatOrderDateTime(value?: string) {
+  if (!value) return "--";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "--";
+
+  return date.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function getShortOrderId(order: any) {
+  const id = getOrderId(order);
+  return id ? id.slice(-6).toUpperCase() : "------";
+}
+
 export default function AdminOrders() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [filter, setFilter] = useState<string>("all");
+  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+  const ordersRef = useRef<any[]>([]);
+
+  useEffect(() => {
+    ordersRef.current = orders;
+  }, [orders]);
 
   const TABS = [
     { label: "All",               value: "all" },
@@ -52,28 +77,72 @@ export default function AdminOrders() {
     { label: "Delivered",         value: "delivered" },
   ];
 
-  const filteredOrders = filter === "all"
+  const filteredOrders = (filter === "all"
     ? orders
-    : orders.filter((o) => (o.status || "pending").toLowerCase() === filter);
+    : orders.filter((o) => (o.status || "pending").toLowerCase() === filter)
+  ).slice().sort((a, b) => {
+    const aTime = new Date(a.createdAt || 0).getTime();
+    const bTime = new Date(b.createdAt || 0).getTime();
+    return bTime - aTime;
+  });
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await adminFetch("/api/orders");
-        if (!res.ok) throw new Error("fetch failed");
-        const data = await res.json();
-        setOrders(Array.isArray(data) ? data : (data.orders || []));
-      } catch {
+  const pendingCount = orders.filter((o) => ["pending", "placed", "accepted"].includes((o.status || "pending").toLowerCase())).length;
+  const deliveredCount = orders.filter((o) => (o.status || "pending").toLowerCase() === "delivered").length;
+  const totalVisibleValue = filteredOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
+
+  async function fetchOrders(options?: { silent?: boolean }) {
+    try {
+      const res = await adminFetch("/api/orders");
+      if (!res.ok) throw new Error("fetch failed");
+      const data = await res.json();
+      const nextOrders = Array.isArray(data) ? data : (data.orders || []);
+
+      // During silent background refreshes, keep current list if API briefly returns empty.
+      if (options?.silent && ordersRef.current.length > 0 && nextOrders.length === 0) {
+        return;
+      }
+
+      setOrders(nextOrders);
+      setHasLoadedOnce(true);
+      setError(false);
+    } catch {
+      if (!options?.silent) {
         setError(true);
-      } finally {
+      }
+    } finally {
+      if (!options?.silent) {
         setLoading(false);
       }
-    })();
+    }
+  }
+
+  useEffect(() => {
+    fetchOrders();
+
+    const intervalId = window.setInterval(() => {
+      fetchOrders({ silent: true });
+    }, 5000);
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchOrders({ silent: true });
+      }
+    };
+
+    window.addEventListener("focus", onVisibilityChange);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", onVisibilityChange);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
   }, []);
 
   const updateStatus = async (id: string, status: string) => {
-    // Optimistic update
-    setOrders((prev) => prev.map((o) => (o._id === id ? { ...o, status } : o)));
+    const previousOrders = orders;
+    setUpdatingOrderId(id);
+    setOrders((prev) => prev.map((o) => (getOrderId(o) === id ? { ...o, status } : o)));
     const res = await adminFetch("/api/orders/update", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -83,8 +152,14 @@ export default function AdminOrders() {
     if (!res.ok) {
       const errorBody = await res.json().catch(() => null);
       console.error("Failed to update order status:", errorBody ?? res.statusText);
+      setOrders(previousOrders);
       alert(errorBody?.error ?? "Failed to update order status.");
+      setUpdatingOrderId(null);
+      return;
     }
+
+    await fetchOrders({ silent: true });
+    setUpdatingOrderId(null);
   };
 
   return (
@@ -114,6 +189,29 @@ export default function AdminOrders() {
             )}
           </button>
         ))}
+      </div>
+
+      <div className="mb-5 flex flex-wrap items-center gap-2 text-xs">
+        {!hasLoadedOnce ? (
+          <span className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 font-semibold text-blue-700">
+            Refreshing orders...
+          </span>
+        ) : (
+          <>
+            <span className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-semibold text-gray-700">
+              Showing: {filteredOrders.length}
+            </span>
+            <span className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 font-semibold text-amber-700">
+              Action needed: {pendingCount}
+            </span>
+            <span className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 font-semibold text-emerald-700">
+              Delivered: {deliveredCount}
+            </span>
+            <span className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 font-semibold text-blue-700">
+              Visible total: ₹{totalVisibleValue.toFixed(2)}
+            </span>
+          </>
+        )}
       </div>
 
       {loading ? (
@@ -165,9 +263,11 @@ export default function AdminOrders() {
                   <div className="flex items-start justify-between gap-4 mb-4">
                     {/* Customer Info */}
                     <div>
+                      <p className="text-[11px] font-semibold tracking-wide text-gray-400">ORDER #{getShortOrderId(order)}</p>
                       <h3 className="font-bold text-gray-900">{order.userName || "Guest"}</h3>
-                      <p className="text-sm text-gray-500 mt-0.5">📞 {order.phone || "—"}</p>
+                      <p className="text-sm text-gray-500 mt-0.5">📞 {normalizePhone(order.phone) || "—"}</p>
                       <p className="text-sm text-gray-500 mt-0.5">🕒 {order.deliverySlot || "—"}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">Placed: {formatOrderDateTime(order.createdAt)}</p>
                       <p className="text-xs text-gray-400 mt-0.5 truncate max-w-xs">📍 {order.address || "—"}</p>
                     </div>
                     {/* Status Badge */}
@@ -214,10 +314,11 @@ export default function AdminOrders() {
                   {/* Action Button — progress to next status */}
                   {meta.nextLabel ? (
                     <button
+                      disabled={updatingOrderId === getOrderId(order)}
                       onClick={() => updateStatus(getOrderId(order), meta.next)}
-                      className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors"
+                      className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      {meta.nextLabel} <ChevronRight className="w-3.5 h-3.5" />
+                      {updatingOrderId === getOrderId(order) ? "Updating..." : meta.nextLabel} <ChevronRight className="w-3.5 h-3.5" />
                     </button>
                   ) : (
                     <span className="text-xs text-emerald-600 font-semibold">✓ Order complete</span>
