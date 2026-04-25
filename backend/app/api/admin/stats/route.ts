@@ -15,9 +15,14 @@ type AdminStatsResponse = {
   recentOrders: {
     id: string;
     userName: string;
+    phone: string;
     total: number;
     status: string;
     createdAt: string;
+    items: {
+      name: string;
+      quantity: number;
+    }[];
   }[];
 };
 
@@ -131,9 +136,11 @@ export async function GET(request: NextRequest) {
             projection: {
               _id: 1,
               userName: 1,
+              phone: 1,
               total: 1,
               status: 1,
               createdAt: 1,
+              items: 1,
             },
           }
         )
@@ -156,9 +163,14 @@ export async function GET(request: NextRequest) {
     const recentOrders = recentOrderDocs.map((order) => ({
       id: order._id?.toString?.() ?? "",
       userName: order.userName ?? "Guest",
+      phone: order.phone ?? "",
       total: Number(order.total ?? 0),
       status: String(order.status ?? "pending"),
       createdAt: new Date(order.createdAt ?? new Date()).toISOString(),
+      items: (order.items ?? []).map((item: any) => ({
+        name: item.name ?? "",
+        quantity: Number(item.quantity ?? 1),
+      })),
     }));
 
     const response: AdminStatsResponse = {

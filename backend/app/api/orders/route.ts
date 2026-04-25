@@ -9,13 +9,6 @@ import { requireAdminToken, rateLimit } from "@/lib/api-guard";
 export const runtime = "nodejs";
 const MINIMUM_ORDER_VALUE = 200;
 
-function isOnlinePaymentEnabled() {
-  return (
-    process.env.ENABLE_ONLINE_PAYMENTS === "true" &&
-    Boolean(process.env.RAZORPAY_KEY_ID) &&
-    Boolean(process.env.RAZORPAY_KEY_SECRET)
-  );
-}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -37,12 +30,7 @@ const orderItemSchema = z.object({
   quantity: z.number().int().positive(),
 });
 
-const paymentMethodSchema = z
-  .string()
-  .trim()
-  .toUpperCase()
-  .pipe(z.enum(["COD", "ONLINE"]))
-  .default("COD");
+const paymentMethodSchema = z.literal("COD");
 
 const deliverySlotSchema = z
   .string()
@@ -92,15 +80,7 @@ export async function POST(request: NextRequest) {
       notes,
     } = parsed.data;
 
-    if (paymentMethod === "ONLINE" && !isOnlinePaymentEnabled()) {
-      return jsonWithCors(
-        {
-          error: "Online payments are currently unavailable. Please choose Cash on Delivery.",
-        },
-        400
-      );
-    }
-
+    
     if (subtotal < MINIMUM_ORDER_VALUE) {
       return jsonWithCors(
         {
@@ -110,9 +90,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const isOnlineOrder = paymentMethod === "ONLINE";
-    const paymentStatus = isOnlineOrder ? "pending" : "cod_pending";
-    const status = isOnlineOrder ? "pending" : "placed";
+    const paymentStatus = "cod_pending";
+    const status = "placed";
 
     const order: Omit<OrderDocument, "_id"> = {
       userName,
@@ -184,69 +163,82 @@ function jsonWithCors(body: unknown, status: number) {
 }
 
 export async function GET(request: NextRequest) {
-  // Protect all order data — admin only
-  const authError = await requireAdminToken(request);
-  if (authError) return authError;
+  try {
+    // Protect all order data — admin only
+    const authError = await requireAdminToken(request);
+    if (authError) return authError;
 
-  const limited = rateLimit(request, { limit: 30, windowMs: 60_000 });
-  if (limited) return limited;
+    const limited = rateLimit(request, { limit: 30, windowMs: 60_000 });
+    if (limited) return limited;
 
-  const client = await clientPromise;
-  const db = client.db();
-  const col = db.collection<OrderDocument>(ORDERS_COLLECTION);
+    const client = await clientPromise;
+    const db = client.db();
+    const col = db.collection<OrderDocument>(ORDERS_COLLECTION);
 
-  const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(request.url);
 
-  // ── Fast stats-only mode for admin dashboard ──────────────────────────────
-  if (searchParams.get("stats") === "1") {
-    const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    // ── Fast stats-only mode for admin dashboard ──────────────────────────────
+    if (searchParams.get("stats") === "1") {
+      const now = new Date();
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    const [totalOrders, todayOrders, pendingOrders, revenueResult] = await Promise.all([
-      col.countDocuments(),
-      col.countDocuments({ createdAt: { $gte: startOfDay } }),
-      col.countDocuments({ status: { $in: ["pending", "placed"] } }),
-      col.aggregate([
-        { $group: { _id: null, total: { $sum: "$total" } } },
-      ]).toArray(),
+      const [totalOrders, todayOrders, pendingOrders, revenueResult] = await Promise.all([
+        col.countDocuments(),
+        col.countDocuments({ createdAt: { $gte: startOfDay } }),
+        col.countDocuments({ status: { $in: ["pending", "placed"] } }),
+        col.aggregate([
+          { $group: { _id: null, total: { $sum: "$total" } } },
+        ]).toArray(),
+      ]);
+
+      return NextResponse.json({
+        totalOrders,
+        todayOrders,
+        pendingOrders,
+        revenue: revenueResult[0]?.total ?? 0,
+      }, {
+        headers: {
+          ...corsHeaders,
+          "Cache-Control": "private, max-age=30, stale-while-revalidate=60",
+        },
+      });
+    }
+
+    // ── Paginated order list ──────────────────────────────────────────────────
+    const page  = Math.max(1, parseInt(searchParams.get("page")  ?? "1",  10));
+    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") ?? "20", 10)));
+    const skip  = (page - 1) * limit;
+    const statusFilter = searchParams.get("status") ?? "";
+
+    const query: Partial<Pick<OrderDocument, "status">> = {};
+    if (statusFilter) query.status = statusFilter;
+
+    const [orders, total] = await Promise.all([
+      col.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).toArray(),
+      col.countDocuments(query),
     ]);
 
-    return NextResponse.json({
-      totalOrders,
-      todayOrders,
-      pendingOrders,
-      revenue: revenueResult[0]?.total ?? 0,
-    }, {
-      headers: {
-        ...corsHeaders,
-        "Cache-Control": "private, max-age=30, stale-while-revalidate=60",
+    return NextResponse.json(
+      { orders, total, page, limit, totalPages: Math.ceil(total / limit) },
+      {
+        headers: {
+          ...corsHeaders,
+          "Cache-Control": "private, max-age=15, stale-while-revalidate=30",
+        },
+      }
+    );
+  } catch (error: unknown) {
+    console.error("GET /api/orders failed:", error);
+    return jsonWithCors(
+      {
+        error: "Failed to fetch orders.",
+        details: process.env.NODE_ENV !== "production"
+          ? String((error as Error).message)
+          : undefined,
       },
-    });
+      500
+    );
   }
-
-  // ── Paginated order list ──────────────────────────────────────────────────
-  const page  = Math.max(1, parseInt(searchParams.get("page")  ?? "1",  10));
-  const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") ?? "20", 10)));
-  const skip  = (page - 1) * limit;
-  const status = searchParams.get("status") ?? "";
-
-  const query: Partial<Pick<OrderDocument, "status">> = {};
-  if (status) query.status = status;
-
-  const [orders, total] = await Promise.all([
-    col.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).toArray(),
-    col.countDocuments(query),
-  ]);
-
-  return NextResponse.json(
-    { orders, total, page, limit, totalPages: Math.ceil(total / limit) },
-    {
-      headers: {
-        ...corsHeaders,
-        "Cache-Control": "private, max-age=15, stale-while-revalidate=30",
-      },
-    }
-  );
 }
 
 function isMongoValidatorError(

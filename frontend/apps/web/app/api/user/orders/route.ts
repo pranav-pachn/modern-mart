@@ -74,8 +74,12 @@ export async function GET(request: NextRequest) {
       .toArray();
 
     return NextResponse.json(docs.map(serializeOrder));
-  } catch (error) {
+  } catch (error: any) {
     console.error("Failed to fetch customer orders:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ 
+      error: "Internal Server Error", 
+      details: error.message,
+      stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined 
+    }, { status: 500 });
   }
 }

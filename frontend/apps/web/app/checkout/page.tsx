@@ -22,7 +22,7 @@ import toast from "react-hot-toast";
 const ORDERS_API_URL = "/api/orders";
 const ADDRESS_API_URL = "/api/user/address";
 const MINIMUM_ORDER_VALUE = 200;
-const ONLINE_PAYMENTS_ENABLED = process.env.NEXT_PUBLIC_ENABLE_ONLINE_PAYMENTS === "true";
+const ONLINE_PAYMENTS_ENABLED = false; // Disabled for COD-only
 const HAS_RAZORPAY_KEY = Boolean(process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID);
 
 const DELIVERY_SLOTS = ["Morning", "Afternoon", "Evening"] as const;
@@ -48,7 +48,7 @@ export default function CheckoutPage() {
   const { items, subtotal, deliveryFee, total, clearCart } = useCart();
   const [statusMessage, setStatusMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState("cod");
+  const [paymentMethod] = useState("cod"); // COD only
   const [deliverySlot, setDeliverySlot] = useState<(typeof DELIVERY_SLOTS)[number]>("Morning");
 
   const [savedAddresses, setSavedAddresses] = useState<UserAddress[]>([]);
@@ -64,7 +64,7 @@ export default function CheckoutPage() {
 
   const isMinimumOrderMet = subtotal >= MINIMUM_ORDER_VALUE;
   const minimumOrderShortfall = Math.max(0, MINIMUM_ORDER_VALUE - subtotal);
-  const canUseOnlinePayment = ONLINE_PAYMENTS_ENABLED && HAS_RAZORPAY_KEY;
+  const canUseOnlinePayment = false; // Always false for COD-only
 
   useEffect(() => {
     if (session) {
@@ -101,59 +101,7 @@ export default function CheckoutPage() {
     setDeliveryDetails((prev) => ({ ...prev, address: addr.addressLine }));
   };
 
-  const handlePayment = async (orderId: string) => {
-    try {
-      const res = await fetch("/api/payment", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: total, orderId }),
-      });
-
-      if (!res.ok) throw new Error("Payment init failed");
-      const data = await res.json();
-
-      const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        amount: data.amount,
-        currency: "INR",
-        name: "Panchavati Mart",
-        order_id: data.id,
-        handler: async function (response: any) {
-          try {
-            const verifyRes = await fetch("/api/payment/verify", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                orderId,
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-              }),
-            });
-            if (!verifyRes.ok) throw new Error("Payment verification failed");
-            clearCart();
-            router.push(`/order-success?orderId=${encodeURIComponent(orderId)}`);
-          } catch {
-            setStatusMessage("Payment could not be verified. Your cart is safe; please contact support with your payment reference.");
-            setIsSubmitting(false);
-          }
-        },
-      };
-
-      if (!(window as any).Razorpay) {
-        setStatusMessage("Razorpay checkout is unavailable. Disable browser blocker or choose COD.");
-        setIsSubmitting(false);
-        return;
-      }
-
-      const rzp = new (window as any).Razorpay(options);
-      rzp.open();
-    } catch {
-      setStatusMessage("Payment failed. Please try again.");
-      setIsSubmitting(false);
-    }
-  };
-
+  
   const submitOrder = async (formData: FormData | null): Promise<string | null> => {
     const userName = (formData?.get("name") as string) ?? deliveryDetails.userName;
     const phone = (formData?.get("phone") as string) ?? deliveryDetails.phone;
@@ -161,7 +109,7 @@ export default function CheckoutPage() {
     const userId = session?.user && typeof session.user === "object" ? (session.user as { id?: string }).id : undefined;
     const userEmail = session?.user?.email ?? undefined;
 
-    const normalizedPaymentMethod = paymentMethod === "online" ? "ONLINE" : "COD";
+    const normalizedPaymentMethod = "COD"; // Always COD
 
     const payload = {
       userName,
@@ -223,11 +171,6 @@ export default function CheckoutPage() {
     const orderId = await submitOrder(formData);
     if (!orderId) return;
 
-    if (paymentMethod === "online") {
-      await handlePayment(orderId);
-      return;
-    }
-
     clearCart();
     toast.success("Order placed successfully! 🎉");
     router.push(`/order-success?orderId=${encodeURIComponent(orderId)}`);
@@ -235,13 +178,6 @@ export default function CheckoutPage() {
 
   return (
     <>
-      <Script
-        src="https://checkout.razorpay.com/v1/checkout.js"
-        strategy="lazyOnload"
-        onError={() => {
-          setStatusMessage("Razorpay checkout was blocked. Disable your blocker or use COD.");
-        }}
-      />
       <main className="min-h-screen bg-zinc-50 px-4 py-8 sm:px-6 sm:py-10 dark:bg-zinc-950">
         <div className="mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[1.4fr_1fr]">
 
@@ -404,47 +340,19 @@ export default function CheckoutPage() {
                 </p>
               </div>
 
-              {/* Payment method */}
-              <fieldset>
-                <legend className="mb-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-                  Payment Method
-                </legend>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {[
-                    { value: "cod", label: "Cash on Delivery", sub: "Pay when order arrives" },
-                    ...(canUseOnlinePayment
-                      ? [{ value: "online", label: "Online Payment", sub: "UPI / Card / Net Banking" }]
-                      : []),
-                  ].map((opt) => (
-                    <label
-                      key={opt.value}
-                      className={`flex cursor-pointer items-center gap-3 rounded-xl border-2 p-3.5 transition-all ${
-                        paymentMethod === opt.value
-                          ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20"
-                          : "border-zinc-200 hover:border-zinc-300 dark:border-zinc-700"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value={opt.value}
-                        checked={paymentMethod === opt.value}
-                        onChange={(e) => setPaymentMethod(e.target.value)}
-                        className="h-4 w-4 accent-emerald-600"
-                      />
-                      <div>
-                        <p className="font-semibold text-zinc-900 dark:text-zinc-100 text-sm">{opt.label}</p>
-                        <p className="text-xs text-zinc-500 dark:text-zinc-400">{opt.sub}</p>
-                      </div>
-                    </label>
-                  ))}
+              {/* Payment method - COD only */}
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/20">
+                <div className="flex items-center gap-3">
+                  <div className="h-4 w-4 rounded-full border-2 border-emerald-600 bg-emerald-600"></div>
+                  <div>
+                    <p className="font-semibold text-emerald-900 dark:text-emerald-100 text-sm">Cash on Delivery</p>
+                    <p className="text-xs text-emerald-700 dark:text-emerald-300">Pay when order arrives</p>
+                  </div>
                 </div>
-                {!canUseOnlinePayment && (
-                  <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
-                    Cash on Delivery is active for this MVP. Enable online payments only after Razorpay is fully configured.
-                  </p>
-                )}
-              </fieldset>
+                <p className="mt-2 text-xs text-emerald-600 dark:text-emerald-400">
+                  Simple and secure - pay only when you receive your order.
+                </p>
+              </div>
 
               {/* Delivery slot */}
               <fieldset>

@@ -153,7 +153,7 @@ export default function AdminProducts() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Products</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Tap a price to edit it inline · Toggle stock status with one tap
+          Simple product management for your shop
         </p>
       </div>
 
@@ -223,10 +223,10 @@ export default function AdminProducts() {
                     </div>
                   </div>
 
-                  {/* Price (inline editable) */}
+                  {/* Price display */}
                   <div className="flex items-center justify-between mb-3 py-2 border-t border-b border-gray-100">
                     <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Price</span>
-                    <InlinePrice product={p} onChange={update} />
+                    <span className="font-bold text-emerald-600">₹{p.price}</span>
                   </div>
 
                   {/* Stock status toggle */}

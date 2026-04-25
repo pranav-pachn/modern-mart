@@ -12,9 +12,14 @@ type AdminStats = {
   recentOrders: {
     id: string;
     userName: string;
+    phone: string;
     total: number;
     status: string;
     createdAt: string;
+    items: {
+      name: string;
+      quantity: number;
+    }[];
   }[];
 };
 
@@ -52,6 +57,21 @@ function formatOrderTime(isoDate: string) {
 function formatOrderLabel(id: string) {
   const shortId = id.slice(-4).toUpperCase();
   return `Order #${shortId}`;
+}
+
+function formatPhone(phone: string) {
+  // Ensure Indian format
+  return phone.startsWith("91") ? phone : `91${phone}`;
+}
+
+function getWhatsAppLink(order: any) {
+  const phone = formatPhone(order.phone);
+  const message = encodeURIComponent(
+    `🛒 Order Confirmation\n\nHi ${order.userName},\n\nYour order (#${order.id}) has been received.\n\n🧾 Items:\n${order.items
+      .map((i: any) => `- ${i.name} x ${i.quantity}`)
+      .join("\n")}\n\n💰 Total: ₹${order.total}\n\nWe will deliver soon 🚚`
+  );
+  return `https://wa.me/${phone}?text=${message}`;
 }
 
 function StatCard({
@@ -279,11 +299,29 @@ export default function AdminOverviewPage() {
                         <p className="truncate text-sm font-semibold text-slate-900">{formatOrderLabel(order.id)}</p>
                         <p className="mt-0.5 text-xs text-slate-500">{order.userName}</p>
                       </div>
-                      <div className="flex items-center gap-3 text-sm">
-                        <span className="font-semibold text-emerald-700">{formatCurrency(order.total)}</span>
-                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold capitalize text-slate-600">
-                          {order.status}
-                        </span>
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                        <div className="flex items-center gap-3 text-sm">
+                          <span className="font-semibold text-emerald-700">{formatCurrency(order.total)}</span>
+                          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold capitalize text-slate-600">
+                            {order.status}
+                          </span>
+                        </div>
+                        <div className="flex gap-2">
+                          <a
+                            href={getWhatsAppLink(order)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            WhatsApp
+                          </a>
+                          <a
+                            href={`tel:${order.phone}`}
+                            className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            Call
+                          </a>
+                        </div>
                       </div>
                     </div>
                     <div className="mt-2 text-xs text-slate-500">Placed at {formatOrderTime(order.createdAt)}</div>

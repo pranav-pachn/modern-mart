@@ -6,11 +6,13 @@ import { Card, CardContent } from "@workspace/ui/components/card";
 import { ChevronRight, MessageCircle, PhoneCall } from "lucide-react";
 
 const STATUS_FLOW: Record<string, { next: string; label: string; color: string; nextLabel: string }> = {
-  pending:          { next: "Accepted",         label: "Placed",           color: "bg-gray-100 text-gray-600",    nextLabel: "Accept" },
-  placed:           { next: "Accepted",         label: "Placed",           color: "bg-gray-100 text-gray-600",    nextLabel: "Accept" },
-  accepted:         { next: "Out for Delivery", label: "Accepted",         color: "bg-blue-100 text-blue-700",    nextLabel: "Out for Delivery" },
-  "out for delivery": { next: "Delivered",      label: "Out for Delivery", color: "bg-amber-100 text-amber-700",  nextLabel: "Mark Delivered" },
-  delivered:        { next: "",                 label: "Delivered",        color: "bg-emerald-100 text-emerald-700", nextLabel: "" },
+  pending:          { next: "preparing",    label: "New",           color: "bg-red-100 text-red-700",     nextLabel: "Start Preparing" },
+  placed:           { next: "preparing",    label: "New",           color: "bg-red-100 text-red-700",     nextLabel: "Start Preparing" },
+  accepted:         { next: "preparing",    label: "New",           color: "bg-red-100 text-red-700",     nextLabel: "Start Preparing" },
+  preparing:        { next: "ready",        label: "Preparing",     color: "bg-blue-100 text-blue-700",    nextLabel: "Mark Ready" },
+  ready:            { next: "delivered",    label: "Ready",         color: "bg-amber-100 text-amber-700",  nextLabel: "Mark Delivered" },
+  "out for delivery": { next: "delivered", label: "Ready",         color: "bg-amber-100 text-amber-700",  nextLabel: "Mark Delivered" },
+  delivered:        { next: "",             label: "Delivered",      color: "bg-emerald-100 text-emerald-700", nextLabel: "" },
 };
 
 function getStatusMeta(status: string) {
@@ -71,15 +73,18 @@ export default function AdminOrders() {
   }, [orders]);
 
   const TABS = [
-    { label: "All",               value: "all" },
-    { label: "Pending",           value: "pending" },
-    { label: "Out for Delivery",  value: "out for delivery" },
-    { label: "Delivered",         value: "delivered" },
+    { label: "All",        value: "all" },
+    { label: "New Orders", value: "new" },
+    { label: "Preparing",  value: "preparing" },
+    { label: "Ready",      value: "ready" },
+    { label: "Delivered",  value: "delivered" },
   ];
 
   const filteredOrders = (filter === "all"
     ? orders
-    : orders.filter((o) => (o.status || "pending").toLowerCase() === filter)
+    : filter === "new" 
+      ? orders.filter((o) => ["pending", "placed", "accepted"].includes((o.status || "pending").toLowerCase()))
+      : orders.filter((o) => (o.status || "pending").toLowerCase() === filter)
   ).slice().sort((a, b) => {
     const aTime = new Date(a.createdAt || 0).getTime();
     const bTime = new Date(b.createdAt || 0).getTime();

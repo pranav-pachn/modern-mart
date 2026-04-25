@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { adminFetch } from "@/lib/admin-fetch";
 import Link from "next/link";
-import { Clock3, IndianRupee, PackageCheck, RefreshCw, ShoppingCart, ChevronRight } from "lucide-react";
+import { Clock3, IndianRupee, PackageCheck, RefreshCw, ShoppingCart, ChevronRight, PlusCircle } from "lucide-react";
 
 type AdminStats = {
   totalOrders: number;
@@ -158,7 +158,9 @@ export default function AdminDashboardPage() {
     };
   }, []);
 
-  const hasData = useMemo(() => Object.values(stats).some((value) => value > 0), [stats]);
+  const hasData = useMemo(() => {
+  return stats.totalOrders > 0 || stats.todayOrders > 0 || stats.pendingOrders > 0 || stats.totalRevenue > 0 || stats.recentOrders.length > 0;
+}, [stats]);
 
   const cards = [
     {
@@ -263,6 +265,37 @@ export default function AdminDashboardPage() {
                 backgroundClass={card.backgroundClass}
               />
             ))}
+          </div>
+
+          {/* What to do next - Quick Actions */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 className="text-base font-semibold text-slate-900 mb-3">Quick Actions</h2>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Link
+                href="/admin/add-product"
+                className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 transition hover:border-emerald-300 hover:bg-emerald-100"
+              >
+                <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center">
+                  <PlusCircle className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-emerald-900">Add Product</p>
+                  <p className="text-xs text-emerald-600">Add new items to shop</p>
+                </div>
+              </Link>
+              <Link
+                href="/admin/orders"
+                className="flex items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 p-3 transition hover:border-blue-300 hover:bg-blue-100"
+              >
+                <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
+                  <ShoppingCart className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-blue-900">Manage Orders</p>
+                  <p className="text-xs text-blue-600">View and update orders</p>
+                </div>
+              </Link>
+            </div>
           </div>
 
           <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col">
