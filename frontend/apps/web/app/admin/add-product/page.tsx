@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package, Upload, Check, Zap, SlidersHorizontal } from "lucide-react";
 
 import { adminFetch } from "@/lib/admin-fetch";

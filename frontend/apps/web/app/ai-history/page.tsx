@@ -6,7 +6,7 @@ import { getAiHistory, AIHistoryItem } from "@/lib/ai-history";
 import Link from "next/link";
 import { useCart } from "@/store/cart";
 import { ArrowLeft, Clock, History, Plus, CheckCircle2, ShoppingBag, ChevronDown, ChevronUp } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AiHistorySkeleton } from "@/components/Skeletons";
 import toast from "react-hot-toast";
 

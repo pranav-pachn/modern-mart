@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { adminFetch } from "@/lib/admin-fetch";
-import { Card, CardContent } from "@workspace/ui/components/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { ChevronRight, MessageCircle, PhoneCall } from "lucide-react";
 
 const STATUS_FLOW: Record<string, { next: string; label: string; color: string; nextLabel: string }> = {

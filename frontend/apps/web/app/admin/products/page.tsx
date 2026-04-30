@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { adminFetch } from "@/lib/admin-fetch";
-import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
-import { Badge } from "@workspace/ui/components/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Pencil, Trash2, X, Check, ToggleLeft, ToggleRight, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 

@@ -1,12 +1,7 @@
 /**
- * adminFetch — calls admin APIs through same-origin rewrites.
- * This preserves Auth.js cookies before the request is proxied to the backend.
+ * adminFetch targets the local Next.js API routes.
  */
-
-export async function adminFetch(
-  endpoint: string,
-  init: RequestInit = {}
-): Promise<Response> {
+export async function adminFetch(endpoint: string, init: RequestInit = {}): Promise<Response> {
   const headers = new Headers(init.headers ?? {});
 
   if (init.body && typeof init.body === "string" && !headers.has("Content-Type")) {

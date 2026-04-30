@@ -13,7 +13,6 @@
   },
   "dependencies": {
     "@auth/mongodb-adapter": "^3.11.1",
-    "@workspace/ui": "*",
     "bcryptjs": "^3.0.3",
     "lucide-react": "^1.7.0",
     "mongodb": "^6.21.0",
@@ -29,12 +28,9 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",
-    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^25.1.0",
     "@types/react": "^19.2.10",
     "@types/react-dom": "^19.2.3",
-    "@workspace/eslint-config": "*",
-    "@workspace/typescript-config": "*",
     "eslint": "^9.39.2",
     "tailwindcss": "^4.1.18",
     "typescript": "^5.9.3"
