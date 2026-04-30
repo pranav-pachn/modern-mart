@@ -18,6 +18,7 @@ import Link from "next/link";
 import { AiResultSkeleton } from "@/components/Skeletons";
 import { useSession } from "next-auth/react";
 import { saveAiHistory } from "@/lib/ai-history";
+import { apiFetch } from "@/lib/api-client";
 import toast from "react-hot-toast";
 
 type MatchedItem = {
@@ -86,9 +87,8 @@ export default function AIGroceryPage() {
     if (promptText) setInput(promptText);
 
     try {
-      const res = await fetch("/api/ai", {
+      const res = await apiFetch("/api/ai", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: query }),
       });
 
@@ -118,9 +118,8 @@ export default function AIGroceryPage() {
       }
 
       // Match with DB
-      const matchRes = await fetch("/api/ai/match", {
+      const matchRes = await apiFetch("/api/ai/match", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ items: [...parsedItems, ...parsedSuggested] }),
       });
 

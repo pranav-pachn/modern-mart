@@ -1,3 +1,5 @@
+import { apiFetch } from "./api-client";
+
 const LOCAL_STORAGE_KEY = "ai-history-guest";
 
 export type AIHistoryItem = {
@@ -25,9 +27,8 @@ export async function saveAiHistory(
   if (session && session.user) {
     // Save directly to DB
     try {
-      const res = await fetch("/api/ai/history", {
+      const res = await apiFetch("/api/ai/history", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newItem),
       });
       if (!res.ok) {
@@ -60,7 +61,7 @@ function _saveToLocal(item: AIHistoryItem) {
 export async function getAiHistory(session: any): Promise<AIHistoryItem[]> {
   if (session && session.user) {
     try {
-      const res = await fetch("/api/ai/history");
+      const res = await apiFetch("/api/ai/history");
       if (res.ok) {
         return await res.json();
       }
@@ -87,9 +88,8 @@ export async function syncHistoryOnLogin() {
     const items: AIHistoryItem[] = JSON.parse(existingStr);
     if (items.length === 0) return;
 
-    const res = await fetch("/api/ai/history", {
+    const res = await apiFetch("/api/ai/history", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(items),
     });
 

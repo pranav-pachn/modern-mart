@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { ArrowLeft, ChevronRight, Clock3, Loader2, PackageCheck, ReceiptText } from "lucide-react";
+import { apiFetch } from "@/lib/api-client";
 
 type Order = {
   id: string;
@@ -45,7 +46,7 @@ export default function OrdersPage() {
       try {
         setLoading(true);
         setError("");
-        const response = await fetch("/api/user/orders");
+        const response = await apiFetch("/api/user/orders");
         if (!response.ok) {
           throw new Error("Unable to load your orders.");
         }

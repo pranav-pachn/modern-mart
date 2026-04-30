@@ -7,6 +7,7 @@ import { Search, SlidersHorizontal, X, Loader2, ChevronLeft, ChevronRight } from
 import ProductCard from "@/components/ProductCard";
 import { ProductGridSkeleton } from "@/components/Skeletons";
 import { useCart } from "@/store/cart";
+import { apiFetch } from "@/lib/api-client";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -108,7 +109,7 @@ function ShopContent() {
 
   // ── Fetch categories from backend ─────────────────────────────────────────
   useEffect(() => {
-    fetch("/api/products/categories")
+    apiFetch("/api/products/categories")
       .then((r) => r.json())
       .then((data) => {
         if (Array.isArray(data)) setCategories(data);
@@ -130,7 +131,7 @@ function ShopContent() {
         if (selectedCat && selectedCat !== "All") params.set("category", selectedCat);
         if (selectedSort) params.set("sort", selectedSort);
 
-        const res = await fetch(`/api/products?${params.toString()}`);
+        const res = await apiFetch(`/api/products?${params.toString()}`);
         if (!res.ok) throw new Error("Products request failed");
 
         const responseData = await res.json();

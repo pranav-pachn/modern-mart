@@ -5,6 +5,7 @@ import { useCart } from "@/store/cart";
 import { Sparkles, ShoppingBag, Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { saveAiHistory } from "@/lib/ai-history";
+import { apiFetch } from "@/lib/api-client";
 
 export default function AIGrocery() {
   const [input, setInput] = useState("");
@@ -24,9 +25,8 @@ export default function AIGrocery() {
     setSuggestedResults([]);
 
     try {
-      const res = await fetch("/api/ai", {
+      const res = await apiFetch("/api/ai", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: input }),
       });
 
@@ -47,9 +47,8 @@ export default function AIGrocery() {
         throw new Error("Could not understand the AI response, please try again.");
       }
 
-      const matchRes = await fetch("/api/ai/match", {
+      const matchRes = await apiFetch("/api/ai/match", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ items: [...parsedItems, ...parsedSuggested] }),
       });
 
