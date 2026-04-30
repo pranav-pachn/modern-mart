@@ -1,9 +1,4 @@
 {
   "name": "supermart",
-  "private": true,
-  "workspaces": [
-    "backend",
-    "frontend/apps/*",
-    "frontend/packages/*"
-  ]
+  "private": true
 }
