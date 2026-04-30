@@ -1,9 +1,8 @@
+/** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: "standalone",
   experimental: {
     externalDir: true,
-  },
-  turbopack: {
-    root: __dirname,
   },
 };
 
