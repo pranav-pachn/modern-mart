@@ -4,8 +4,10 @@ import { NextRequest, NextResponse } from "next/server";
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
+const AUTH_SECRET = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
+
 async function isAdmin(req: NextRequest): Promise<boolean> {
-  const token = await getToken({ req, secret: process.env.AUTH_SECRET });
+  const token = await getToken({ req, secret: AUTH_SECRET });
   return (token as any)?.role === "admin";
 }
 
@@ -102,7 +104,7 @@ export async function middleware(req: NextRequest) {
   const isProtected = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
 
   if (isProtected) {
-    const token = await getToken({ req, secret: process.env.AUTH_SECRET });
+    const token = await getToken({ req, secret: AUTH_SECRET });
     if (!token) {
       const loginUrl = new URL("/login", req.url);
       loginUrl.searchParams.set("callbackUrl", pathname);
@@ -112,7 +114,7 @@ export async function middleware(req: NextRequest) {
 
   // ── 4. Redirect logged-in users from landing page ───────────────────────
   if (pathname === "/") {
-    const token = await getToken({ req, secret: process.env.AUTH_SECRET });
+    const token = await getToken({ req, secret: AUTH_SECRET });
     if (token) {
       if (token.role === "admin") {
         return NextResponse.redirect(new URL("/admin", req.url));
