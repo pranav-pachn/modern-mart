@@ -33,7 +33,19 @@ function parseApiKeys(raw?: string): string[] {
 
 export async function POST(req: Request) {
   try {
-    const { prompt } = await req.json();
+    let rawBody: unknown;
+    try {
+      rawBody = await req.json();
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid JSON body" },
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
+    const prompt = typeof (rawBody as { prompt?: unknown })?.prompt === "string"
+      ? (rawBody as { prompt: string }).prompt
+      : "";
 
     if (!prompt?.trim()) {
       return NextResponse.json({ error: "Prompt is required" }, { status: 400, headers: corsHeaders });
@@ -109,7 +121,10 @@ CRITICAL RULES:
       };
 
       if (provider.name === "OpenRouter") {
-        headers["HTTP-Referer"] = "http://localhost:3000";
+        const frontendOrigin = process.env.FRONTEND_ORIGIN ?? process.env.NEXT_PUBLIC_SITE_URL;
+        if (frontendOrigin) {
+          headers["HTTP-Referer"] = frontendOrigin;
+        }
         headers["X-Title"] = "Panchavati Mart";
       }
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
-import clientPromise from "@/lib/mongodb";
+import { getMongoClient } from "@/lib/mongodb";
 import { ORDERS_COLLECTION } from "@/models/Order";
 import { requireAdminToken } from "@/lib/api-guard";
 
@@ -24,9 +24,18 @@ export async function POST(req: NextRequest) {
     const authError = await requireAdminToken(req);
     if (authError) return authError;
 
-    const body = await req.json();
-    const id = typeof body?.id === "string" ? body.id.trim() : "";
-    const rawStatus = typeof body?.status === "string" ? body.status.trim() : "";
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400, headers: corsHeaders });
+    }
+
+    const payload = typeof body === "object" && body !== null
+      ? body as { id?: unknown; status?: unknown }
+      : {};
+    const id = typeof payload.id === "string" ? payload.id.trim() : "";
+    const rawStatus = typeof payload.status === "string" ? payload.status.trim() : "";
     const status = rawStatus.toLowerCase();
 
     if (!id || !ObjectId.isValid(id)) {
@@ -52,7 +61,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid order status" }, { status: 400, headers: corsHeaders });
     }
 
-    const client = await clientPromise;
+    const client = await getMongoClient();
     const result = await client.db()
       .collection(ORDERS_COLLECTION)
       .updateOne(

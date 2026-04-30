@@ -10,13 +10,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 
+async function getAuthToken(req: NextRequest) {
+  const isSecure = req.url.startsWith("https://");
+  const authjsCookieName = isSecure ? "__Secure-authjs.session-token" : "authjs.session-token";
+  const nextAuthCookieName = isSecure ? "__Secure-next-auth.session-token" : "next-auth.session-token";
+
+  return (
+    await getToken({ req, secret: process.env.AUTH_SECRET, cookieName: authjsCookieName }) ??
+    await getToken({ req, secret: process.env.AUTH_SECRET, cookieName: nextAuthCookieName }) ??
+    await getToken({ req, secret: process.env.AUTH_SECRET })
+  );
+}
+
 // ── 1. Admin auth guard ────────────────────────────────────────────────────────
 //
 // Primary auth: NextAuth JWT role=admin (cookie-backed).
 // Dev fallback only: x-admin-secret for local scripting convenience.
 //
 export async function requireAdminToken(req: NextRequest): Promise<NextResponse | null> {
-  const token = await getToken({ req, secret: process.env.AUTH_SECRET });
+  const token = await getAuthToken(req);
   if ((token as { role?: string } | null)?.role === "admin") {
     return null;
   }

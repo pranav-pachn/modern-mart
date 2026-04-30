@@ -10,8 +10,20 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
+async function getAuthToken(req: NextRequest) {
+  const isSecure = req.url.startsWith("https://");
+  const authjsCookieName = isSecure ? "__Secure-authjs.session-token" : "authjs.session-token";
+  const nextAuthCookieName = isSecure ? "__Secure-next-auth.session-token" : "next-auth.session-token";
+
+  return (
+    await getToken({ req, secret: process.env.AUTH_SECRET, cookieName: authjsCookieName }) ??
+    await getToken({ req, secret: process.env.AUTH_SECRET, cookieName: nextAuthCookieName }) ??
+    await getToken({ req, secret: process.env.AUTH_SECRET })
+  );
+}
+
 async function hasAdminAccess(req: NextRequest): Promise<boolean> {
-  const token = await getToken({ req, secret: process.env.AUTH_SECRET });
+  const token = await getAuthToken(req);
   if ((token as { role?: string } | null)?.role === "admin") {
     return true;
   }

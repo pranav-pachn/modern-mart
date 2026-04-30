@@ -3,9 +3,16 @@ import process from "node:process"
 import { fileURLToPath } from "node:url"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-// Frontend and backend run on different ports in local dev.
-// Default backend target must not point to the frontend itself.
-const backendApiUrl = process.env.BACKEND_API_URL || "http://localhost:3000"
+// Frontend and backend run as separate Vercel projects.
+// Production must use an explicit deployed backend URL to avoid localhost loops.
+const backendApiUrl =
+  process.env.BACKEND_API_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  (process.env.NODE_ENV === "production" ? undefined : "http://localhost:3001")
+
+if (!backendApiUrl) {
+  throw new Error("Missing BACKEND_API_URL or NEXT_PUBLIC_API_URL")
+}
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {

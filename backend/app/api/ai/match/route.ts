@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import clientPromise from "@/lib/mongodb";
+import { getMongoClient } from "@/lib/mongodb";
 import { PRODUCTS_COLLECTION, type ProductDocument } from "@/models/Product";
 import { rateLimit } from "@/lib/api-guard";
 
@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
 
     const { items } = parsed.data;
 
-    const client = await clientPromise;
+    const client = await getMongoClient();
     const db = client.db();
     const col = db.collection<ProductDocument>(PRODUCTS_COLLECTION);
 

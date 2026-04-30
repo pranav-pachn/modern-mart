@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
-import clientPromise from "@/lib/mongodb";
+import { getMongoClient } from "@/lib/mongodb";
 import { ORDERS_COLLECTION, type OrderDocument } from "@/models/Order";
 import { rateLimit } from "@/lib/api-guard";
 
@@ -36,7 +36,7 @@ export async function GET(
       );
     }
 
-    const client = await clientPromise;
+    const client = await getMongoClient();
     const db = client.db();
     
     const order = await db

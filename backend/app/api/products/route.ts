@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from "next/server";
-import clientPromise from "@/lib/mongodb";
+import { getMongoClient } from "@/lib/mongodb";
 import { requireAdminToken } from "@/lib/api-guard";
 import { PRODUCTS_COLLECTION, type ProductDocument } from "@/models/Product";
 
@@ -46,7 +46,7 @@ export async function GET(request: Request) {
     else if (sort === "rating") sortOptions.rating = -1;
     else sortOptions.createdAt = -1; // Default sort
 
-    const client = await clientPromise;
+    const client = await getMongoClient();
     const col = client.db().collection<ProductDocument>(PRODUCTS_COLLECTION);
 
     const [products, total] = await Promise.all([
@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const client = await clientPromise;
+    const client = await getMongoClient();
     const db = client.db();
 
     const now = new Date();

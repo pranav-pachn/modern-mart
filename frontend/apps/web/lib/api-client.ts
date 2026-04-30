@@ -3,7 +3,7 @@
  * Uses NEXT_PUBLIC_API_URL for separate frontend/backend deployment
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 /**
  * Fetch wrapper that prepends the backend API URL
@@ -14,6 +14,10 @@ export async function apiFetch(
   endpoint: string,
   init: RequestInit = {}
 ): Promise<Response> {
+  if (!API_BASE_URL) {
+    throw new Error("Missing NEXT_PUBLIC_API_URL");
+  }
+
   const url = `${API_BASE_URL}${endpoint}`;
   
   const headers = new Headers(init.headers ?? {});
@@ -35,27 +39,12 @@ export async function apiFetch(
 }
 
 /**
- * Admin fetch with authentication
- * Note: In production, admin auth should use secure httpOnly cookies,
- * not client-side secrets. This is for dev/scripting convenience.
+ * Admin fetch with authentication.
+ * Admin authorization is enforced by Auth.js cookies and backend route guards.
  */
 export async function adminApiFetch(
   endpoint: string,
   init: RequestInit = {}
 ): Promise<Response> {
-  // In production, auth is handled via NextAuth JWT (cookies)
-  // The x-admin-secret header is only for local dev convenience
-  const isDev = process.env.NODE_ENV === "development";
-  const adminSecret = isDev ? process.env.NEXT_PUBLIC_ADMIN_SECRET : undefined;
-  
-  const headers = new Headers(init.headers ?? {});
-  
-  if (adminSecret && !headers.has("x-admin-secret")) {
-    headers.set("x-admin-secret", adminSecret);
-  }
-  
-  return apiFetch(endpoint, {
-    ...init,
-    headers,
-  });
+  return apiFetch(endpoint, init);
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
-import clientPromise from "@/lib/mongodb";
+import { getMongoClient } from "@/lib/mongodb";
 import { USERS_COLLECTION, UserAddress } from "@/models/User";
 import { z } from "zod";
 
@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const client = await clientPromise;
+    const client = await getMongoClient();
     const db = client.db();
     const user = await db.collection(USERS_COLLECTION).findOne({ email: token.email });
 
@@ -36,20 +36,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await req.json();
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
+
     const parsed = addressSchema.safeParse(body);
 
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.format() }, { status: 400 });
     }
 
-    const client = await clientPromise;
+    const client = await getMongoClient();
     const db = client.db();
 
     const newAddress: UserAddress = {
       id: Math.random().toString(36).substring(7),
       ...parsed.data,
-      isDefault: body.isDefault || false,
+      isDefault: typeof body === "object" && body !== null && "isDefault" in body
+        ? Boolean((body as { isDefault?: unknown }).isDefault)
+        : false,
     };
 
     // If isDefault is true, unset other default addresses
@@ -86,7 +94,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "Address ID is required" }, { status: 400 });
     }
 
-    const client = await clientPromise;
+    const client = await getMongoClient();
     const db = client.db();
 
     await db.collection(USERS_COLLECTION).updateOne(

@@ -1,12 +1,25 @@
 /**
- * adminFetch — calls backend admin APIs via apiFetch().
- * Admin authorization is enforced server-side via NextAuth JWT.
+ * adminFetch — calls admin APIs through same-origin rewrites.
+ * This preserves Auth.js cookies before the request is proxied to the backend.
  */
-import { apiFetch } from "./api-client";
 
 export async function adminFetch(
   endpoint: string,
   init: RequestInit = {}
 ): Promise<Response> {
-  return apiFetch(endpoint, init);
+  const headers = new Headers(init.headers ?? {});
+
+  if (init.body && typeof init.body === "string" && !headers.has("Content-Type")) {
+    try {
+      JSON.parse(init.body);
+      headers.set("Content-Type", "application/json");
+    } catch {
+      // Leave non-JSON bodies untouched.
+    }
+  }
+
+  return fetch(endpoint, {
+    ...init,
+    headers,
+  });
 }

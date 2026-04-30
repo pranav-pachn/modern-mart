@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
-import clientPromise from "@/lib/mongodb";
+import { getMongoClient } from "@/lib/mongodb";
 import { REVIEWS_COLLECTION, type ReviewDocument } from "@/models/Review";
 import { PRODUCTS_COLLECTION } from "@/models/Product";
 import { getToken } from "next-auth/jwt";
@@ -39,7 +39,7 @@ export async function GET(
       );
     }
 
-    const client = await clientPromise;
+    const client = await getMongoClient();
     const db = client.db();
 
     const reviews = await db
@@ -97,7 +97,16 @@ export async function POST(
       );
     }
 
-    const rawBody = await request.json();
+    let rawBody: unknown;
+    try {
+      rawBody = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid JSON body" },
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
     const parsed = reviewSchema.safeParse(rawBody);
 
     if (!parsed.success) {
@@ -107,7 +116,7 @@ export async function POST(
       );
     }
 
-    const client = await clientPromise;
+    const client = await getMongoClient();
     const db = client.db();
 
     // Ensure product exists

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import clientPromise from "@/lib/mongodb";
+import { getMongoClient } from "@/lib/mongodb";
 import { PRODUCTS_COLLECTION } from "@/models/Product";
 
 export const runtime = "nodejs";
@@ -16,7 +16,7 @@ export async function OPTIONS() {
 
 export async function GET() {
   try {
-    const client = await clientPromise;
+    const client = await getMongoClient();
     const db = client.db();
 
     const categories: string[] = await db

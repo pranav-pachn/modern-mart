@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import clientPromise from "@/lib/mongodb";
+import { getMongoClient } from "@/lib/mongodb";
 import { ORDERS_COLLECTION, type OrderDocument } from "@/models/Order";
 import { requireAdminToken } from "@/lib/api-guard";
 
@@ -16,24 +16,25 @@ export async function OPTIONS() {
 }
 
 export async function GET(request: NextRequest) {
-  const authError = await requireAdminToken(request);
-  if (authError) return authError;
+  try {
+    const authError = await requireAdminToken(request);
+    if (authError) return authError;
 
-  const client = await clientPromise;
-  const db = client.db();
-  const col = db.collection<OrderDocument>(ORDERS_COLLECTION);
+    const client = await getMongoClient();
+    const db = client.db();
+    const col = db.collection<OrderDocument>(ORDERS_COLLECTION);
 
-  // Date range — last 30 days
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    // Date range — last 30 days
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-  const [
-    statusBreakdown,
-    revenueByDay,
-    ordersByDay,
-    topProducts,
-    recentActivity,
-  ] = await Promise.all([
+    const [
+      statusBreakdown,
+      revenueByDay,
+      ordersByDay,
+      topProducts,
+      recentActivity,
+    ] = await Promise.all([
     // A) Status breakdown — all orders
     col.aggregate([
       { $group: { _id: { $toLower: "$status" }, count: { $sum: 1 } } },
@@ -98,15 +99,22 @@ export async function GET(request: NextRequest) {
       createdAt: 1,
       updatedAt: 1
     }).toArray(),
-  ]);
+    ]);
 
-  return NextResponse.json(
-    { statusBreakdown, revenueByDay, ordersByDay, topProducts, recentActivity },
-    {
-      headers: {
-        ...corsHeaders,
-        "Cache-Control": "private, max-age=60, stale-while-revalidate=120",
-      },
-    }
-  );
+    return NextResponse.json(
+      { statusBreakdown, revenueByDay, ordersByDay, topProducts, recentActivity },
+      {
+        headers: {
+          ...corsHeaders,
+          "Cache-Control": "private, max-age=60, stale-while-revalidate=120",
+        },
+      }
+    );
+  } catch (error) {
+    console.error("Failed to fetch order analytics:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch order analytics." },
+      { status: 500, headers: corsHeaders }
+    );
+  }
 }

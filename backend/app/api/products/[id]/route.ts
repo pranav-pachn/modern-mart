@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ObjectId, Int32 } from "mongodb";
 import { z } from "zod";
-import clientPromise from "@/lib/mongodb";
+import { getMongoClient } from "@/lib/mongodb";
 import { PRODUCTS_COLLECTION, type ProductDocument } from "@/models/Product";
 import { requireAdminToken, rateLimit } from "@/lib/api-guard";
 
@@ -16,7 +16,7 @@ const corsHeaders = {
 // ── Zod schema for product update ─────────────────────────────────────────────
 const updateProductSchema = z.object({
   name:        z.string().min(1, "Name is required").max(200),
-  price:       z.number({ invalid_type_error: "Price must be a number" }).nonnegative("Price must be ≥ 0"),
+  price:       z.coerce.number().nonnegative("Price must be >= 0"),
   category:    z.string().min(1, "Category is required").max(100),
   image:       z.string().max(2000).optional().default(""),
   stock:       z.number().int().nonnegative().optional().default(0),
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
       return NextResponse.json({ error: "Invalid ID format" }, { status: 400, headers: corsHeaders });
     }
 
-    const client = await clientPromise;
+    const client = await getMongoClient();
     const product = await client
       .db()
       .collection<ProductDocument>(PRODUCTS_COLLECTION)
@@ -109,7 +109,7 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
     if (description !== undefined) productToUpdate.description = description;
     if (unit !== undefined) productToUpdate.unit = unit;
 
-    const client = await clientPromise;
+    const client = await getMongoClient();
     const result = await client
       .db()
       .collection<ProductDocument>(PRODUCTS_COLLECTION)
@@ -141,7 +141,7 @@ export async function DELETE(req: NextRequest, context: { params: Promise<{ id: 
       return NextResponse.json({ error: "Invalid ID format" }, { status: 400, headers: corsHeaders });
     }
 
-    const client = await clientPromise;
+    const client = await getMongoClient();
     const result = await client
       .db()
       .collection<ProductDocument>(PRODUCTS_COLLECTION)

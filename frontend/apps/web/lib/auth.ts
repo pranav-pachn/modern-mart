@@ -4,44 +4,53 @@ import Credentials from "next-auth/providers/credentials";
 import { MongoDBAdapter } from "@auth/mongodb-adapter";
 import clientPromise from "@/lib/mongodb";
 
+const providers = [];
+
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+  providers.push(
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    })
+  );
+}
+
+providers.push(
+  Credentials({
+    credentials: {
+      email: {},
+      password: {},
+    },
+    authorize: async (credentials) => {
+      if (!credentials.email || !credentials.password) return null;
+      const client = await clientPromise;
+      const db = client.db();
+      const user = await db.collection("users").findOne({ email: credentials.email as string });
+
+      if (!user || !user.password) {
+        return null;
+      }
+
+      const bcrypt = await import("bcryptjs");
+      const isValid = await bcrypt.compare(credentials.password as string, user.password);
+
+      if (isValid) {
+        return {
+          id: user._id.toString(),
+          name: user.name,
+          email: user.email,
+          role: user.role || "user",
+        };
+      }
+
+      return null;
+    },
+  })
+);
+
 const authOptions = {
   adapter: MongoDBAdapter(clientPromise),
-  providers: [
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
-    Credentials({
-      credentials: {
-        email: {},
-        password: {},
-      },
-      authorize: async (credentials) => {
-        if (!credentials.email || !credentials.password) return null;
-        const client = await clientPromise;
-        const db = client.db();
-        const user = await db.collection("users").findOne({ email: credentials.email as string });
-        
-        if (!user || !user.password) {
-          return null;
-        }
-
-        const bcrypt = await import("bcryptjs");
-        const isValid = await bcrypt.compare(credentials.password as string, user.password);
-
-        if (isValid) {
-          return {
-            id: user._id.toString(),
-            name: user.name,
-            email: user.email,
-            role: user.role || "user",
-          };
-        }
-        
-        return null;
-      },
-    }),
-  ],
+  providers,
   session: {
     strategy: "jwt" as const,
   },

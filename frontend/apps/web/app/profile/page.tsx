@@ -21,7 +21,6 @@ import {
   Edit3,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { apiFetch } from "@/lib/api-client";
 
 type UserAddress = {
   id: string;
@@ -79,7 +78,7 @@ export default function ProfilePage() {
   const fetchAddresses = async () => {
     setIsLoadingAddresses(true);
     try {
-      const res = await apiFetch("/api/user/address");
+      const res = await fetch("/api/user/address");
       if (res.ok) {
         const data = await res.json();
         setAddresses(data);
@@ -114,7 +113,7 @@ export default function ProfilePage() {
 
     setIsSaving(true);
     try {
-      const res = await apiFetch("/api/user/address", {
+      const res = await fetch("/api/user/address", {
         method: "POST",
         body: JSON.stringify({
           label,
@@ -147,7 +146,7 @@ export default function ProfilePage() {
   const handleDelete = async (id: string, label: string) => {
     setDeletingId(id);
     try {
-      const res = await apiFetch(`/api/user/address?id=${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/user/address?id=${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error();
       setAddresses((prev) => prev.filter((a) => a.id !== id));
       toast(`"${label}" address removed`, { icon: "🗑️" });
@@ -161,7 +160,7 @@ export default function ProfilePage() {
   const handleSetDefault = async (id: string) => {
     setSettingDefaultId(id);
     try {
-      const res = await apiFetch(`/api/user/address?id=${id}`, { method: "PATCH" });
+      const res = await fetch(`/api/user/address?id=${id}`, { method: "PATCH" });
       if (!res.ok) throw new Error();
       setAddresses((prev) =>
         prev.map((a) => ({ ...a, isDefault: a.id === id }))

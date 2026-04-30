@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
-import clientPromise from "@/lib/mongodb";
+import { getMongoClient } from "@/lib/mongodb";
 import { ORDERS_COLLECTION, type OrderDocument } from "@/models/Order";
 import { PRODUCTS_COLLECTION, type ProductDocument } from "@/models/Product";
 import { z } from "zod";
@@ -53,7 +53,13 @@ const orderSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const rawBody = await request.json();
+    let rawBody: unknown;
+    try {
+      rawBody = await request.json();
+    } catch {
+      return jsonWithCors({ error: "Invalid JSON body" }, 400);
+    }
+
     const parsed = orderSchema.safeParse(rawBody);
 
     if (!parsed.success) {
@@ -111,7 +117,7 @@ export async function POST(request: NextRequest) {
     if (notes?.trim()) order.notes = notes.trim();
 
 
-    const client = await clientPromise;
+    const client = await getMongoClient();
     const db = client.db();
 
     // Validate stock
@@ -171,7 +177,7 @@ export async function GET(request: NextRequest) {
     const limited = rateLimit(request, { limit: 30, windowMs: 60_000 });
     if (limited) return limited;
 
-    const client = await clientPromise;
+    const client = await getMongoClient();
     const db = client.db();
     const col = db.collection<OrderDocument>(ORDERS_COLLECTION);
 

@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { apiFetch } from "@/lib/api-client";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -20,7 +19,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const res = await apiFetch("/api/auth/register", {
+      const res = await fetch("/api/auth/register", {
         method: "POST",
         body: JSON.stringify({ name, email, password }),
       });
