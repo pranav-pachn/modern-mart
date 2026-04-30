@@ -120,7 +120,20 @@ cd backend
 npm run setup-db
 ```
 
-### 4. Run Development Servers
+### 4. Environment Variables (Frontend)
+
+Create `.env.local` in `frontend/apps/web/`:
+
+```env
+# Backend API URL (required for frontend to call backend)
+NEXT_PUBLIC_API_URL=http://localhost:3001
+
+# Auth (same secret as backend)
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your_random_secret_key_here
+```
+
+### 5. Run Development Servers
 
 ```bash
 # Terminal 1 — Backend API
@@ -187,20 +200,21 @@ npm run dev          # http://localhost:3000
 
 ## 🚢 Deployment
 
-### Vercel (Recommended)
+> ⚠️ **Deploy backend and frontend as separate Vercel projects.**
 
-1. **Push to GitHub**
-   ```bash
-   git push origin main
-   ```
+| Project | Root Directory | Example URL |
+|---------|---------------|-------------|
+| **Backend** | `backend` | `https://api-supermart.vercel.app` |
+| **Frontend** | `frontend/apps/web` | `https://supermart.vercel.app` |
 
-2. **Import to Vercel**
-   - Go to [vercel.com](https://vercel.com)
+### Backend Deployment
+
+1. **Create new Vercel project**
    - Import your repository
-   - Set root directory to `backend` for API
-   - Set environment variables (see `.env.example`)
+   - **Root Directory**: `backend`
+   - Framework Preset: Next.js
 
-3. **Environment Variables Required**
+2. **Environment Variables**
    ```
    MONGODB_URI=
    AUTH_SECRET=
@@ -208,10 +222,28 @@ npm run dev          # http://localhost:3000
    OPENROUTER_API_KEY=  # or GROQ_API_KEY
    ```
 
-4. **Deploy**
-   - Vercel auto-detects Next.js
-   - Build command: `next build`
-   - Output directory: `.next`
+3. **Deploy** → Get your backend URL (e.g., `https://api-supermart.vercel.app`)
+
+### Frontend Deployment
+
+1. **Create new Vercel project**
+   - Import the same repository
+   - **Root Directory**: `frontend/apps/web`
+   - Framework Preset: Next.js
+
+2. **Environment Variables**
+   ```
+   # The deployed backend URL
+   NEXT_PUBLIC_API_URL=https://api-supermart.vercel.app
+   
+   # Auth (same secret as backend)
+   NEXTAUTH_URL=https://supermart.vercel.app
+   NEXTAUTH_SECRET=your_random_secret_key_here
+   ```
+
+3. **Deploy**
+
+> 💡 **API Calls in Frontend**: Always use `process.env.NEXT_PUBLIC_API_URL + "/api/..."` not just `/api/...`
 
 ### Manual Deployment
 

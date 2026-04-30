@@ -14,11 +14,19 @@ npm run dev
 
 ## Environment Variables
 
+### Backend (`backend/.env.local`)
 ```env
 MONGODB_URI=mongodb+srv://...
 AUTH_SECRET=your_secret
 ADMIN_SECRET=admin_secret
 OPENROUTER_API_KEY=sk-or-v1-...
+```
+
+### Frontend (`frontend/apps/web/.env.local`)
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3001  # Your backend URL
+AUTH_SECRET=your_secret  # Same as backend
+NEXTAUTH_URL=http://localhost:3000
 ```
 
 ## Scripts
