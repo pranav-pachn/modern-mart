@@ -62,7 +62,7 @@ export default function LoginPage() {
 
           <button
             id="google-signin-btn"
-            onClick={() => signIn("google", { callbackUrl: "/shop" })}
+            onClick={() => signIn("google")}
             className="google-btn"
           >
             <svg width="20" height="20" viewBox="0 0 18 18" fill="none" aria-hidden="true">
