@@ -50,7 +50,8 @@ providers.push(
 
 const authOptions = {
   adapter: MongoDBAdapter(clientPromise),
-  providers,  session: {
+  providers,
+  session: {
     strategy: "jwt" as const,
   },
   callbacks: {
