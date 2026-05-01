@@ -5,6 +5,9 @@ export async function middleware(req: any) {
   const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
   const token = await getToken({ req, secret });
 
+  // DEBUG: Log token to verify role is present
+  console.log("TOKEN:", token);
+
   const { pathname } = req.nextUrl;
 
   // 🟢 Allow public routes
