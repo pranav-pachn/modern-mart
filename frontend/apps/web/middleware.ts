@@ -1,137 +1,32 @@
+import { NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
-import { NextRequest, NextResponse } from "next/server";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────────────────
-const AUTH_SECRET = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
+export async function middleware(req: any) {
+  const token = await getToken({ req });
 
-async function isAdmin(req: NextRequest): Promise<boolean> {
-  const token = await getToken({ req, secret: AUTH_SECRET });
-  return (token as any)?.role === "admin";
-}
-
-// Rate-limit login attempts — 10 per minute per IP
-const loginRateLimit = new Map<string, { count: number; expires: number }>();
-
-function checkLoginRateLimit(req: NextRequest): NextResponse | null {
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  const now = Date.now();
-  const windowMs = 60_000;
-  const max = 10;
-
-  const record = loginRateLimit.get(ip);
-  if (!record || record.expires < now) {
-    loginRateLimit.set(ip, { count: 1, expires: now + windowMs });
-    return null;
-  }
-  if (record.count >= max) {
-    return NextResponse.json(
-      { error: "Too many login attempts. Please try again later." },
-      { status: 429 }
-    );
-  }
-  record.count += 1;
-  return null;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Middleware
-// ─────────────────────────────────────────────────────────────────────────────
-export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  const method = req.method.toUpperCase();
 
-  // ── 0. Rate-limit login attempts ──────────────────────────────────────────
-  if (pathname.startsWith("/api/auth") && method === "POST") {
-    const limited = checkLoginRateLimit(req);
-    if (limited) return limited;
+  // 🟢 Allow public routes
+  if (
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/register") ||
+    pathname.startsWith("/api/auth") ||
+    pathname === "/"
+  ) {
+    return NextResponse.next();
   }
 
-  // ── 1. API Security Rules ────────────────────────────────────────────────
-  //
-  //  /api/products    GET    → Everyone  (customers browse products)
-  //  /api/products    POST   → Admin only (add product)
-  //  /api/products/*  PUT    → Admin only (edit product)
-  //  /api/products/*  DELETE → Admin only (delete product)
-  //  /api/orders      POST   → Everyone  (customers place orders)
-  //  /api/orders/update     → Admin only (accept / dispatch / deliver)
-
-  const isProductsRoute =
-    pathname === "/api/products" || pathname.startsWith("/api/products/");
-  const isReviewsRoute = pathname.match(/^\/api\/products\/[^/]+\/reviews/);
-  const isOrdersUpdateRoute = pathname.startsWith("/api/orders/update");
-  const isAdminStatsRoute = pathname.startsWith("/api/admin");
-
-  // Block non-GET product mutations unless the caller is admin, exempting reviews
-  if (isProductsRoute && method !== "GET" && method !== "OPTIONS" && !isReviewsRoute) {
-    if (!(await isAdmin(req))) {
-      return NextResponse.json(
-        { error: "Unauthorized. Admin access required." },
-        { status: 401 }
-      );
-    }
-  }
-
-  // Block order-status changes for non-admins
-  if (isOrdersUpdateRoute && method !== "OPTIONS") {
-    if (!(await isAdmin(req))) {
-      return NextResponse.json(
-        { error: "Unauthorized. Admin access required." },
-        { status: 401 }
-      );
-    }
-  }
-
-  if (isAdminStatsRoute && method !== "OPTIONS") {
-    if (!(await isAdmin(req))) {
-      return NextResponse.json(
-        { error: "Unauthorized. Admin access required." },
-        { status: 401 }
-      );
-    }
-  }
-
-  // ── 2. Admin Page Protection ─────────────────────────────────────────────
+  // 🔴 Protect only admin routes
   if (pathname.startsWith("/admin")) {
-    if (!(await isAdmin(req))) {
-      return NextResponse.redirect(new URL("/", req.url));
+    if (!token || token.role !== "admin") {
+      return NextResponse.redirect(new URL("/login", req.url));
     }
   }
 
-  // ── 3. Auth-required Pages ───────────────────────────────────────────────
-  const PROTECTED_PREFIXES = ["/shop", "/cart", "/checkout", "/ai", "/order"];
-  const isProtected = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
-
-  if (isProtected) {
-    const token = await getToken({ req, secret: AUTH_SECRET });
-    if (!token) {
-      const loginUrl = new URL("/login", req.url);
-      loginUrl.searchParams.set("callbackUrl", pathname);
-      return NextResponse.redirect(loginUrl);
-    }
-  }
-
-  // ── 4. Redirect logged-in users from landing page ───────────────────────
-  if (pathname === "/") {
-    const token = await getToken({ req, secret: AUTH_SECRET });
-    if (token) {
-      if (token.role === "admin") {
-        return NextResponse.redirect(new URL("/admin", req.url));
-      } else {
-        return NextResponse.redirect(new URL("/shop", req.url));
-      }
-    }
-  }
-
+  // 🟢 Allow all other routes
   return NextResponse.next();
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Matcher – run middleware on all routes except Next.js internals & auth
-// ─────────────────────────────────────────────────────────────────────────────
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico).*)",
-  ],
+  matcher: ["/admin/:path*"],
 };
