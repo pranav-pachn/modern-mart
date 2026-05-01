@@ -16,10 +16,10 @@ export async function middleware(req: any) {
     return NextResponse.next();
   }
 
-  // 🔴 Protect only admin routes
+  // 🔴 Protect only admin  // protect admin
   if (pathname.startsWith("/admin")) {
     if (!token || token.role !== "admin") {
-      return NextResponse.redirect(new URL("/login", req.url));
+      return NextResponse.redirect(new URL("/", req.url));
     }
   }
 
