@@ -4,6 +4,16 @@ import { getToken } from "next-auth/jwt";
 async function getAuthToken(req: NextRequest) {
   const secret = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET;
 
+  // Try to get token with explicit cookie name for NextAuth v5
+  const token = await getToken({
+    req,
+    secret,
+    cookieName: "authjs.session-token",
+  });
+
+  if (token) return token;
+
+  // Fallback to default cookie name
   return getToken({ req, secret });
 }
 

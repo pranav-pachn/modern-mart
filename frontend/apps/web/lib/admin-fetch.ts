@@ -14,8 +14,8 @@ export async function adminFetch(endpoint: string, init: RequestInit = {}): Prom
   }
 
   return fetch(endpoint, {
-    credentials: "include", // 🔥 IMPORTANT: Send cookies for auth
     ...init,
+    credentials: "include", // 🔥 IMPORTANT: Send cookies for auth (must be after ...init)
     headers,
   });
 }

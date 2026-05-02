@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package, Upload, Check, Zap, SlidersHorizontal } from "lucide-react";
 
@@ -11,6 +12,14 @@ const DEFAULT_PRODUCT_IMAGE =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAukB9VEu0hQAAAAASUVORK5CYII=";
 
 export default function AdminAddProduct() {
+  const { data: session, status } = useSession();
+  
+  // Debug session status
+  useEffect(() => {
+    console.log("[Add Product] Session status:", status);
+    console.log("[Add Product] Session data:", session);
+  }, [session, status]);
+  
   const [form, setForm] = useState({
     name: "",
     price: "",
@@ -96,6 +105,20 @@ export default function AdminAddProduct() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Add Product</h1>
         <p className="text-sm text-gray-500 mt-1">Quick mode is optimized to add a product in under 30 seconds.</p>
+        
+        {/* Session Status */}
+        <div className="mt-2 flex items-center gap-2 text-xs">
+          <span className="text-gray-500">Status:</span>
+          {status === "loading" && <span className="text-amber-600">Loading...</span>}
+          {status === "unauthenticated" && (
+            <span className="text-red-600 font-medium">Not logged in - Please log in first</span>
+          )}
+          {status === "authenticated" && (
+            <span className={(session?.user as any)?.role === "admin" ? "text-emerald-600 font-medium" : "text-red-600 font-medium"}>
+              {(session?.user as any)?.role === "admin" ? `Logged in as Admin (${session?.user?.email})` : `Logged in as ${(session?.user as any)?.role || "user"} (Need admin access)`}
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="max-w-xl">
