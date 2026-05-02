@@ -50,6 +50,8 @@ export async function POST(req: NextRequest) {
       "accepted",
       "confirmed",
       "packed",
+      "preparing",
+      "ready",
       "out for delivery",
       "delivered",
       "cancelled",
