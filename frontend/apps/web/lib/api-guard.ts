@@ -9,11 +9,16 @@ async function getAuthToken(req: NextRequest) {
 
 export async function requireAdminToken(req: NextRequest): Promise<NextResponse | null> {
   const token = await getAuthToken(req);
+  console.log("[requireAdminToken] Token:", JSON.stringify(token, null, 2));
   if ((token as { role?: string } | null)?.role === "admin") {
     return null;
   }
 
-  return NextResponse.json({ error: "Unauthorized. Admin access required." }, { status: 401 });
+  console.error("[requireAdminToken] Auth failed - token exists:", !!token, "role:", (token as any)?.role);
+  return NextResponse.json(
+    { error: "Unauthorized. Admin access required.", debug: { hasToken: !!token, role: (token as any)?.role } },
+    { status: 401 }
+  );
 }
 
 type RateBucket = { count: number; windowStart: number };

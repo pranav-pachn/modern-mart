@@ -75,7 +75,17 @@ export default function AdminAddProduct() {
       setPreview(null);
       setTimeout(() => setSuccess(false), 3000);
     } else {
-      alert("Failed to add product. Please check all fields and try again.");
+      const errorText = await res.text();
+      console.error(`[Add Product] Failed - Status: ${res.status}, Body:`, errorText);
+      let errorMessage = `Server error ${res.status}`;
+      try {
+        const errorData = JSON.parse(errorText);
+        errorMessage = errorData.error || errorMessage;
+        if (errorData.debug) errorMessage += `\nDebug: ${JSON.stringify(errorData.debug)}`;
+      } catch {
+        errorMessage += `\n${errorText}`;
+      }
+      alert(`Failed to add product: ${errorMessage}`);
     }
 
     setIsSaving(false);
@@ -200,7 +210,18 @@ export default function AdminAddProduct() {
                 </select>
               </div>
 
-              
+              {/* Description */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Description</label>
+                <textarea
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-50 transition-all resize-none"
+                  placeholder="Brief description of the product..."
+                  value={form.description}
+                  onChange={(e) => setField("description", e.target.value)}
+                  rows={3}
+                />
+              </div>
+
               {/* Submit */}
               <button
                 type="submit"
