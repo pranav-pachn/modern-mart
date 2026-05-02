@@ -1,46 +1,49 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 
-async function getAuthToken(req: NextRequest) {
-  const secret = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET;
+/**
+ * Checks that the current request has a valid admin session.
+ *
+ * Uses auth() — the canonical NextAuth v5 API — instead of getToken().
+ * getToken() fails on HTTPS/Vercel because NextAuth v5 prefixes the
+ * cookie name with __Secure- in production, so the hardcoded
+ * "authjs.session-token" lookup always misses.
+ *
+ * Returns null if auth passes (caller may continue).
+ * Returns a 401 NextResponse if auth fails (caller must return it).
+ */
+export async function requireAdmin(): Promise<NextResponse | null> {
+  const session = await auth();
 
-  // Try to get token with explicit cookie name for NextAuth v5
-  const token = await getToken({
-    req,
-    secret,
-    cookieName: "authjs.session-token",
-  });
-
-  if (token) return token;
-
-  // Fallback to default cookie name
-  return getToken({ req, secret });
-}
-
-export async function requireAdminToken(req: NextRequest): Promise<NextResponse | null> {
-  const token = await getAuthToken(req);
-  console.log("[requireAdminToken] Token:", JSON.stringify(token, null, 2));
-  if ((token as { role?: string } | null)?.role === "admin") {
-    return null;
+  if (!session?.user) {
+    console.error("[requireAdmin] No session found");
+    return NextResponse.json(
+      { error: "Unauthorized. Please log in.", debug: { hasToken: false } },
+      { status: 401 }
+    );
   }
 
-  console.error("[requireAdminToken] Auth failed - token exists:", !!token, "role:", (token as any)?.role);
-  return NextResponse.json(
-    { error: "Unauthorized. Admin access required.", debug: { hasToken: !!token, role: (token as any)?.role } },
-    { status: 401 }
-  );
+  if (session.user.role !== "admin") {
+    console.error("[requireAdmin] Access denied — role:", session.user.role);
+    return NextResponse.json(
+      { error: "Forbidden. Admin access required.", debug: { role: session.user.role } },
+      { status: 403 }
+    );
+  }
+
+  return null; // Auth passed ✓
 }
 
 type RateBucket = { count: number; windowStart: number };
 const rateLimitMap = new Map<string, RateBucket>();
 
 export function rateLimit(
-  req: NextRequest,
+  req: Request,
   options: { limit: number; windowMs: number } = { limit: 30, windowMs: 60_000 }
 ): NextResponse | null {
   const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    req.headers.get("x-real-ip") ??
+    (req.headers as Headers).get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    (req.headers as Headers).get("x-real-ip") ??
     "unknown";
 
   const now = Date.now();

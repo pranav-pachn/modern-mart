@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { getMongoClient } from "@/lib/mongodb";
-import { requireAdminToken } from "@/lib/api-guard";
+import { requireAdmin } from "@/lib/api-guard";
 import { PRODUCTS_COLLECTION, type ProductDocument } from "@/models/Product";
 
 export const runtime = "nodejs";
@@ -86,7 +86,7 @@ const productSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const authError = await requireAdminToken(req);
+  const authError = await requireAdmin();
   if (authError) return authError;
 
   try {

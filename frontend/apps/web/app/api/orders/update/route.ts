@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { getMongoClient } from "@/lib/mongodb";
 import { ORDERS_COLLECTION } from "@/models/Order";
-import { requireAdminToken } from "@/lib/api-guard";
+import { requireAdmin } from "@/lib/api-guard";
 
 export const runtime = "nodejs";
 
@@ -21,7 +21,7 @@ export async function OPTIONS() {
 
 export async function POST(req: NextRequest) {
   try {
-    const authError = await requireAdminToken(req);
+    const authError = await requireAdmin();
     if (authError) return authError;
 
     let body: unknown;
