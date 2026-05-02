@@ -66,10 +66,13 @@ export default function AdminEditProduct() {
     if (!form.image) { alert("Please upload a product image."); return; }
     setIsProcessing(true);
 
+    const payload = { ...form, price: Number(form.price), stock: Number(form.stock) };
+    console.log("[Edit Product] Sending payload:", JSON.stringify(payload, null, 2));
+
     const res = await adminFetch(`/api/products/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, price: Number(form.price), stock: Number(form.stock) }),
+      body: JSON.stringify(payload),
     });
 
     if (res.ok) {
@@ -79,9 +82,17 @@ export default function AdminEditProduct() {
         router.push("/admin/products");
       }, 1000);
     } else {
-      const errorData = await res.json().catch(() => ({ error: "Unknown error" }));
-      console.error("[Edit Product] Update failed:", errorData);
-      alert(`Failed to edit product: ${errorData.error || "Unknown error"}${errorData.details ? `\n${errorData.details}` : ""}`);
+      const errorText = await res.text();
+      console.error(`[Edit Product] Update failed - Status: ${res.status}, Body:`, errorText);
+      let errorMessage = `Server error ${res.status}`;
+      try {
+        const errorData = JSON.parse(errorText);
+        errorMessage = errorData.error || errorMessage;
+        if (errorData.details) errorMessage += `\n${errorData.details}`;
+      } catch {
+        errorMessage += `\n${errorText}`;
+      }
+      alert(`Failed to edit product: ${errorMessage}`);
       setIsProcessing(false);
     }
   };

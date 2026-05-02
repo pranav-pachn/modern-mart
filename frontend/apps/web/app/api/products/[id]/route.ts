@@ -83,10 +83,13 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400, headers: corsHeaders });
     }
 
+    console.log("[Product PUT] Received data:", JSON.stringify(rawBody, null, 2));
     const parsed = updateProductSchema.safeParse(rawBody);
     if (!parsed.success) {
+      const errors = parsed.error.flatten().fieldErrors;
+      console.error("[Product PUT] Validation failed:", errors);
       return NextResponse.json(
-        { error: "Validation failed", details: parsed.error.flatten().fieldErrors },
+        { error: "Validation failed", details: errors },
         { status: 400, headers: corsHeaders }
       );
     }
