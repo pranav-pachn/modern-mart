@@ -1,18 +1,13 @@
 import { NextResponse } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { auth } from "@/lib/auth";
 
-export const runtime = "nodejs";
-
-export async function middleware(req: any) {
-  const token = await getToken({
-    req,
-    secret: process.env.NEXTAUTH_SECRET,
-  });
-
-  console.log("TOKEN:", token);
-
+export default auth((req) => {
   const { pathname } = req.nextUrl;
+  const session = req.auth;
 
+  console.log("SESSION:", session);
+
+  // Allow public routes
   if (
     pathname.startsWith("/login") ||
     pathname.startsWith("/register") ||
@@ -22,14 +17,15 @@ export async function middleware(req: any) {
     return NextResponse.next();
   }
 
+  // Protect admin
   if (pathname.startsWith("/admin")) {
-    if (!token || token.role !== "admin") {
+    if (!session || session.user?.role !== "admin") {
       return NextResponse.redirect(new URL("/", req.url));
     }
   }
 
   return NextResponse.next();
-}
+});
 
 export const config = {
   matcher: ["/admin/:path*"],
