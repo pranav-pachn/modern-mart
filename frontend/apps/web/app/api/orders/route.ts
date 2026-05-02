@@ -4,7 +4,8 @@ import { getMongoClient } from "@/lib/mongodb";
 import { ORDERS_COLLECTION, type OrderDocument } from "@/models/Order";
 import { PRODUCTS_COLLECTION, type ProductDocument } from "@/models/Product";
 import { z } from "zod";
-import { requireAdminToken, rateLimit } from "@/lib/api-guard";
+import { auth } from "@/lib/auth";
+import { rateLimit } from "@/lib/api-guard";
 
 export const runtime = "nodejs";
 const MINIMUM_ORDER_VALUE = 200;
@@ -144,10 +145,13 @@ function jsonWithCors(body: unknown, status: number) {
 }
 
 export async function GET(request: NextRequest) {
-  try {
-    const authError = await requireAdminToken(request);
-    if (authError) return authError;
+  const session = await auth();
 
+  if (!session || session.user?.role !== "admin") {
+    return jsonWithCors({ error: "Unauthorized" }, 401);
+  }
+
+  try {
     const limited = rateLimit(request, { limit: 30, windowMs: 60_000 });
     if (limited) return limited;
 
