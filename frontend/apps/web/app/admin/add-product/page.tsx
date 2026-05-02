@@ -100,12 +100,54 @@ export default function AdminAddProduct() {
           <CardContent className="pt-6">
             <form onSubmit={handleSubmit} className="space-y-5">
 
-              {/* Simplified Image - auto default */}
-              <input
-                type="hidden"
-                value={form.image || DEFAULT_PRODUCT_IMAGE}
-                onChange={(e) => setField("image", e.target.value)}
-              />
+              {/* Image Upload */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Product Image</label>
+                <div className="flex items-center gap-4">
+                  {/* Preview */}
+                  <div className="relative w-20 h-20 rounded-lg border border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden">
+                    {preview ? (
+                      <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <Package className="w-8 h-8 text-gray-300" />
+                    )}
+                  </div>
+                  
+                  <div className="flex flex-col gap-2">
+                    {/* Upload Button */}
+                    <label className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-emerald-300 cursor-pointer transition-all">
+                      <Upload className="w-4 h-4" />
+                      {preview ? "Change Image" : "Upload Image"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleImageUpload}
+                        disabled={isProcessing}
+                      />
+                    </label>
+                    
+                    {/* Remove Button (if image exists) */}
+                    {preview && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPreview(null);
+                          setForm(f => ({ ...f, image: "" }));
+                        }}
+                        className="text-xs text-red-500 hover:text-red-700 font-medium"
+                      >
+                        Remove image
+                      </button>
+                    )}
+                    
+                    {isProcessing && (
+                      <span className="text-xs text-gray-500">Processing...</span>
+                    )}
+                  </div>
+                </div>
+                <p className="mt-1 text-xs text-gray-400">Max 2MB. JPG, PNG recommended.</p>
+              </div>
 
               {/* Name */}
               <div>
