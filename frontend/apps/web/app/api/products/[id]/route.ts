@@ -35,7 +35,8 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
   try {
     const { id } = await context.params;
     if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid ID format" }, { status: 400, headers: corsHeaders });
+      console.warn(`[Product API] Invalid ObjectId format received: "${id}"`);
+      return NextResponse.json({ error: "Invalid ID format", received: id }, { status: 400, headers: corsHeaders });
     }
 
     const client = await getMongoClient();
@@ -118,8 +119,12 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
 
     return NextResponse.json({ success: true, modifiedCount: result.modifiedCount }, { headers: corsHeaders });
   } catch (error) {
-    console.error("Failed to update product:", error);
-    return NextResponse.json({ error: "Failed to update product" }, { status: 500, headers: corsHeaders });
+    console.error("[Product PUT] Failed to update product:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return NextResponse.json(
+      { error: "Failed to update product", details: process.env.NODE_ENV !== "production" ? errorMessage : undefined },
+      { status: 500, headers: corsHeaders }
+    );
   }
 }
 

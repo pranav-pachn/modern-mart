@@ -79,7 +79,9 @@ export default function AdminEditProduct() {
         router.push("/admin/products");
       }, 1000);
     } else {
-      alert("Failed to edit product. Please check all fields and try again.");
+      const errorData = await res.json().catch(() => ({ error: "Unknown error" }));
+      console.error("[Edit Product] Update failed:", errorData);
+      alert(`Failed to edit product: ${errorData.error || "Unknown error"}${errorData.details ? `\n${errorData.details}` : ""}`);
       setIsProcessing(false);
     }
   };

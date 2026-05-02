@@ -34,7 +34,12 @@ function InlinePrice({ product, onChange }: { product: any; onChange: (p: any) =
       image: product.image, stock: product.stock,
     });
     if (res.ok) { onChange({ ...product, price: num }); setEditing(false); }
-    else { alert("Failed to update price."); cancel(); }
+    else {
+      const err = await res.json().catch(() => ({ error: "Request failed" }));
+      console.error("[Inline Price] Update failed:", err);
+      alert(`Failed to update price: ${err.error || "Unknown error"}`);
+      cancel();
+    }
   };
 
   if (editing) {
@@ -82,7 +87,11 @@ function StockToggle({ product, onChange }: { product: any; onChange: (p: any) =
       image: product.image, stock: newStock,
     });
     if (res.ok) onChange({ ...product, stock: newStock });
-    else alert("Could not update stock.");
+    else {
+      const err = await res.json().catch(() => ({ error: "Request failed" }));
+      console.error("[Stock Toggle] Update failed:", err);
+      alert(`Could not update stock: ${err.error || "Unknown error"}`);
+    }
     setBusy(false);
   };
 
