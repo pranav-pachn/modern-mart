@@ -1,27 +1,15 @@
-import { NextResponse, type NextRequest } from "next/server";
-import { auth } from "@/lib/auth";
+/**
+ * Next.js Middleware — runs in Edge Runtime.
+ *
+ * Imports only from auth.config.ts (Edge-safe, no Node.js modules).
+ * auth.ts (which imports mongodb/bcryptjs) is NEVER imported here.
+ */
+import NextAuth from "next-auth";
+import { authConfig } from "@/lib/auth.config";
 
-export default auth((req: NextRequest & { auth: any }) => {
-  const { pathname } = req.nextUrl;
-  const session = req.auth;
+export const { auth: middleware } = NextAuth(authConfig);
 
-  // If user is not logged in, redirect to login
-  if (!session?.user) {
-    const loginUrl = new URL("/login", req.url);
-    loginUrl.searchParams.set("callbackUrl", pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  // Protect admin routes - only admins allowed
-  if (pathname.startsWith("/admin")) {
-    if (session.user?.role !== "admin") {
-      return NextResponse.redirect(new URL("/", req.url));
-    }
-  }
-
-  // All other protected routes are accessible to any logged-in user
-  return NextResponse.next();
-});
+export default middleware;
 
 export const config = {
   matcher: [
