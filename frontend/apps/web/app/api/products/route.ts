@@ -79,7 +79,7 @@ const productSchema = z.object({
   name: z.string().min(1, "Name is required"),
   price: z.number().nonnegative("Price must be a positive number"),
   category: z.string().min(1, "Category is required"),
-  image: z.string().or(z.literal("")),
+  image: z.string().max(5_000_000).or(z.literal("")), // Allow large base64 images (~5MB)
   stock: z.number().int().nonnegative().optional().default(0),
   description: z.string().optional(),
   unit: z.string().optional(),

@@ -18,7 +18,7 @@ const updateProductSchema = z.object({
   name: z.string().min(1, "Name is required").max(200),
   price: z.coerce.number().nonnegative("Price must be >= 0"),
   category: z.string().min(1, "Category is required").max(100),
-  image: z.string().max(2000).optional().default(""),
+  image: z.string().max(5_000_000).optional().default(""), // Allow large base64 images (~5MB)
   stock: z.number().int().nonnegative().optional().default(0),
   description: z.string().max(2000).optional(),
   unit: z.string().max(50).optional(),
@@ -63,8 +63,10 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
 
 export async function PUT(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   const session = await auth();
+  console.log("[Product PUT] Session:", JSON.stringify(session, null, 2));
   if (!session || session.user?.role !== "admin") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
+    console.error("[Product PUT] Auth failed - session:", !!session, "role:", session?.user?.role);
+    return NextResponse.json({ error: "Unauthorized", debug: { hasSession: !!session, role: session?.user?.role } }, { status: 401, headers: corsHeaders });
   }
 
   const limited = rateLimit(req, { limit: 20, windowMs: 60_000 });
