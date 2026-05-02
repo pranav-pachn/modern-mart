@@ -1,7 +1,9 @@
-import { NextResponse } from "next/server";
+export const runtime = "nodejs";
+
+import { NextResponse, type NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 
-export default auth((req: any) => {
+export default auth((req: NextRequest & { auth: any }) => {
   const { pathname } = req.nextUrl;
   const session = req.auth;
 
