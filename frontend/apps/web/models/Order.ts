@@ -105,7 +105,7 @@ export const orderValidator = {
         minimum: 0,
       },
       status: {
-        enum: ["pending", "placed", "accepted", "confirmed", "packed", "out for delivery", "delivered", "cancelled"],
+        enum: ["pending", "placed", "accepted", "confirmed", "packed", "preparing", "ready", "out for delivery", "delivered", "cancelled"],
       },
       paymentMethod: {
         bsonType: "string",
