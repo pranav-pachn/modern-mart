@@ -9,6 +9,7 @@ import type { NextAuthConfig } from "next-auth";
 import { NextResponse } from "next/server";
 
 export const authConfig: NextAuthConfig = {
+  providers: [], // Actual providers (Credentials/Google) added in auth.ts
   session: { strategy: "jwt" },
 
   callbacks: {
