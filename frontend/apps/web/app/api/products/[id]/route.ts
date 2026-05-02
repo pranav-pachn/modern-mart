@@ -63,10 +63,8 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
 
 export async function PUT(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   const session = await auth();
-  console.log("[Product PUT] Session:", JSON.stringify(session, null, 2));
   if (!session || session.user?.role !== "admin") {
-    console.error("[Product PUT] Auth failed - session:", !!session, "role:", session?.user?.role);
-    return NextResponse.json({ error: "Unauthorized", debug: { hasSession: !!session, role: session?.user?.role } }, { status: 401, headers: corsHeaders });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
   }
 
   const limited = rateLimit(req, { limit: 20, windowMs: 60_000 });
@@ -85,11 +83,10 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400, headers: corsHeaders });
     }
 
-    console.log("[Product PUT] Received data:", JSON.stringify(rawBody, null, 2));
+
     const parsed = updateProductSchema.safeParse(rawBody);
     if (!parsed.success) {
       const errors = parsed.error.flatten().fieldErrors;
-      console.error("[Product PUT] Validation failed:", errors);
       return NextResponse.json(
         { error: "Validation failed", details: errors },
         { status: 400, headers: corsHeaders }

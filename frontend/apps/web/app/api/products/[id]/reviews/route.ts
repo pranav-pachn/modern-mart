@@ -59,7 +59,6 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  console.log("POST review request received for:", request.url);
   try {
     const { id: productId } = await params;
     if (!ObjectId.isValid(productId)) {

@@ -67,7 +67,6 @@ export default function AdminEditProduct() {
     setIsProcessing(true);
 
     const payload = { ...form, price: Number(form.price), stock: Number(form.stock) };
-    console.log("[Edit Product] Sending payload:", JSON.stringify(payload, null, 2));
 
     const res = await adminFetch(`/api/products/${id}`, {
       method: "PUT",
@@ -83,14 +82,12 @@ export default function AdminEditProduct() {
       }, 1000);
     } else {
       const errorText = await res.text();
-      console.error(`[Edit Product] Update failed - Status: ${res.status}, Body:`, errorText);
       let errorMessage = `Server error ${res.status}`;
       try {
         const errorData = JSON.parse(errorText);
         errorMessage = errorData.error || errorMessage;
-        if (errorData.details) errorMessage += `\n${errorData.details}`;
       } catch {
-        errorMessage += `\n${errorText}`;
+        // non-JSON error body
       }
       alert(`Failed to edit product: ${errorMessage}`);
       setIsProcessing(false);

@@ -1,77 +1,94 @@
 <div align="center">
+  <img src="https://via.placeholder.com/150x150/4CAF50/FFFFFF?text=🛒" alt="Supermart Logo" width="120" height="120" style="border-radius: 20px; margin-bottom: 20px;" />
+  
+  # 🛒 Supermart
+  
+  **The Next-Generation, AI-Powered Indian Grocery E-Commerce Platform**
+  
+  <p align="center">
+    <a href="https://nextjs.org/"><img src="https://img.shields.io/badge/Next.js-15-000000?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js" /></a>
+    <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" /></a>
+    <a href="https://www.mongodb.com/"><img src="https://img.shields.io/badge/MongoDB-Atlas-47A248?style=for-the-badge&logo=mongodb&logoColor=white" alt="MongoDB" /></a>
+    <a href="https://tailwindcss.com/"><img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS" /></a>
+    <a href="https://vercel.com/"><img src="https://img.shields.io/badge/Vercel-Ready-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Vercel" /></a>
+  </p>
 
-# 🛒 Supermart
-
-**AI-Powered Indian Grocery E-Commerce Platform**
-
-[![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)](https://nextjs.org/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-7-green?style=flat-square&logo=mongodb)](https://mongodb.com/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript)](https://typescriptlang.org/)
-[![Vercel](https://img.shields.io/badge/Vercel-Ready-black?style=flat-square&logo=vercel)](https://vercel.com/)
-
-[Features](#-features) • [Architecture](#-architecture) • [Quick Start](#-quick-start) • [API](#-api-reference) • [Deploy](#-deployment)
-
+  <p align="center">
+    <b><a href="#-features">Features</a></b> •
+    <b><a href="#%EF%B8%8F-architecture">Architecture</a></b> •
+    <b><a href="#-quick-start">Quick Start</a></b> •
+    <b><a href="#-api-reference">API Reference</a></b> •
+    <b><a href="#-deployment-guide">Deployment</a></b>
+  </p>
 </div>
 
 ---
 
-## 🌟 Features
+## ✨ Overview
 
-### 🛍️ Customer Experience
-- **Smart Product Search** — Find products by name or category with intelligent filtering
-- **AI Recipe Assistant** — Enter any dish (e.g., "paneer tikka for 4 people") and get auto-generated grocery lists with quantity calculations
-- **Delivery Slots** — Choose Morning, Afternoon, or Evening delivery
-- **Order Tracking** — Real-time order status updates
-- **Product Reviews** — Customers can rate and review products
-- **Address Management** — Save multiple addresses with labels (Home, Work, etc.)
+**Supermart** is a modern, scalable, and intelligent e-commerce platform tailored for the Indian grocery market. Built with a decoupled architecture using the latest Next.js features, it seamlessly integrates AI to revolutionize how users shop for groceries—from smart recipe parsing to automated ingredient matching.
 
-### 👨‍💼 Admin Dashboard
-- **Real-time Analytics** — Revenue, order counts, and day-over-day metrics
-- **Order Management** — View, filter, and update order statuses
-- **Product CRUD** — Add, edit, delete products with image upload
-- **Inventory Tracking** — Stock management with low-stock warnings
-- **WhatsApp Integration** — Click-to-message customers for order updates
+---
 
-### 🔐 Security & Performance
-- **JWT Authentication** — Secure NextAuth v5 integration
-- **Rate Limiting** — IP-based rate limiting on sensitive endpoints
-- **Admin Role Protection** — Middleware-protected admin routes
-- **CORS Enabled** — Cross-origin support for API routes
-- **MongoDB Aggregation** — Optimized queries for analytics
+## 🚀 Features
+
+### 🛍️ For the Customers
+* **🧠 AI Recipe Assistant:** Input a dish like *"Paneer Butter Masala for 4"* and instantly receive a curated, auto-calculated grocery list.
+* **🔍 Smart Semantic Search:** Find products effortlessly by name, category, or related terms with intelligent filtering.
+* **🚚 Flexible Delivery Slots:** Schedule deliveries with Morning, Afternoon, or Evening slot options.
+* **⭐ Interactive Reviews & Ratings:** Build trust with a robust customer review and star-rating system.
+* **📍 Smart Address Management:** Save, manage, and label multiple addresses (Home, Work) for lightning-fast checkouts.
+* **📦 Real-Time Order Tracking:** Keep users informed with transparent, real-time status updates.
+
+### 💼 For the Admins
+* **📈 Real-Time Analytics Dashboard:** Monitor revenue, track order volumes, and analyze day-over-day growth metrics visually.
+* **🛒 Advanced Order Management:** Filter, view, and update order statuses with ease.
+* **📦 Comprehensive Product CRUD:** Manage inventory, upload images, and update product details seamlessly.
+* **⚠️ Intelligent Inventory Tracking:** Proactive stock management with automated low-stock alerts.
+* **💬 WhatsApp Integration:** Instantly connect with customers via click-to-message for direct order updates.
+
+### 🛡️ Security & Architecture
+* **🔒 NextAuth v5 (Auth.js):** Iron-clad JWT authentication and session management.
+* **🚧 Role-Based Access Control (RBAC):** Strict middleware protection for admin-only routes and actions.
+* **⏱️ Intelligent Rate Limiting:** IP-based protection for sensitive endpoints (e.g., checkout, AI generation).
+* **⚡ Optimized MongoDB Aggregations:** High-performance queries ensuring dashboard analytics load instantly.
 
 ---
 
 ## 🏗️ Architecture
 
-```
+Supermart employs a decoupled, highly scalable monorepo structure, separating the robust Next.js API backend from the blazing-fast Next.js frontend.
+
+```text
 supermart/
-├── backend/              # Next.js API backend
-│   ├── app/api/          # API routes (App Router)
-│   │   ├── ai/          # AI recipe & matching
-│   │   ├── admin/       # Admin stats
-│   │   ├── health/      # Health checks
-│   │   ├── orders/      # Order management
-│   │   ├── products/    # Product CRUD
-│   │   └── user/        # User address management
-│   ├── lib/             # Utilities (MongoDB, auth, rate limiting)
-│   ├── models/          # TypeScript interfaces
-│   └── middleware.ts    # Route protection & CORS
+├── backend/                  # ⚙️ Next.js 15 API Backend (App Router)
+│   ├── app/api/              # RESTful API Endpoints
+│   │   ├── ai/               # AI processing & OpenRouter/Groq integrations
+│   │   ├── admin/            # Analytics & Admin operations
+│   │   ├── orders/           # Order processing & lifecycle
+│   │   ├── products/         # Product catalog & reviews
+│   │   └── user/             # User profiles & address management
+│   ├── lib/                  # Core Utilities (DB connection, Auth, Rate Limit)
+│   ├── models/               # MongoDB Mongoose Schemas & TS Types
+│   └── middleware.ts         # Edge Middleware for Security & CORS
 │
-└── frontend/            # Next.js frontend (Turborepo)
+└── frontend/                 # 💻 Next.js Frontend App
     └── apps/web/
-        ├── app/         # App Router pages
-        ├── components/  # React components
-        └── lib/         # Frontend utilities
+        ├── app/              # UI Routes & Pages
+        ├── components/       # Reusable React UI Components
+        └── lib/              # API Clients & Frontend Utils
 ```
 
 ---
 
-## 🚀 Quick Start
+## 🏁 Quick Start
+
+Get Supermart up and running on your local machine in minutes.
 
 ### Prerequisites
-- Node.js 20+
-- MongoDB Atlas account (or local MongoDB)
-- OpenRouter or Groq API key (for AI features)
+* **Node.js** (v20+ recommended)
+* **MongoDB** (Atlas account or local instance)
+* **AI API Key** ([OpenRouter](https://openrouter.ai/) or [Groq](https://groq.com/))
 
 ### 1. Clone & Install
 
@@ -79,234 +96,183 @@ supermart/
 git clone https://github.com/yourusername/supermart.git
 cd supermart
 
-# Install backend dependencies
+# Install Backend dependencies
 cd backend
 npm install
 
-# Install frontend dependencies
+# Install Frontend dependencies
 cd ../frontend/apps/web
 npm install
 ```
 
-### 2. Environment Setup
+### 2. Environment Configuration
 
-Create `.env` in `backend/`:
-
+**Backend (`backend/.env`):**
 ```env
-# Database
-MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/supermart
+# Database Connection
+MONGODB_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/supermart
 
-# Authentication
-AUTH_SECRET=your_random_secret_key_here
+# Authentication Secrets (Generate with: openssl rand -base64 32)
+AUTH_SECRET=your_super_secret_auth_key
 ADMIN_SECRET=your_admin_api_secret
 
-# AI Providers (at least one required)
+# AI Providers (At least one is required)
 OPENROUTER_API_KEY=sk-or-v1-...
-# OR
-GROQ_API_KEY=gsk_...
+# GROQ_API_KEY=gsk_...
 ```
 
-Create `.env.local` in `frontend/apps/web/`:
-
+**Frontend (`frontend/apps/web/.env.local`):**
 ```env
+# API Connection
+NEXT_PUBLIC_API_URL=http://localhost:3001
+
+# Auth (Must match backend AUTH_SECRET exactly)
 NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=your_random_secret_key_here
+NEXTAUTH_SECRET=your_super_secret_auth_key
 ```
 
-### 3. Database Setup
+### 3. Initialize Database
 
+Populate your local database with initial mock data and indexes.
 ```bash
 cd backend
 npm run setup-db
 ```
 
-### 4. Environment Variables (Frontend)
+### 4. Fire It Up! 🔥
 
-Create `.env.local` in `frontend/apps/web/`:
+Launch both servers concurrently:
 
-```env
-# Backend API URL (required for frontend to call backend)
-NEXT_PUBLIC_API_URL=http://localhost:3001
-
-# Auth (same secret as backend)
-NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=your_random_secret_key_here
+**Terminal 1 (Backend):**
+```bash
+cd backend
+npm run dev
+# Running on http://localhost:3001
 ```
 
-### 5. Run Development Servers
-
+**Terminal 2 (Frontend):**
 ```bash
-# Terminal 1 — Backend API
-cd backend
-npm run dev          # http://localhost:3001
-
-# Terminal 2 — Frontend
 cd frontend/apps/web
-npm run dev          # http://localhost:3000
+npm run dev
+# Running on http://localhost:3000
 ```
 
 ---
 
 ## 📚 API Reference
 
-### Health Check
+<details>
+<summary><b>🛠️ General & Health</b></summary>
+
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/health/db` | GET | Check MongoDB connection |
+| `/api/health/db` | `GET` | Verify MongoDB connection status |
 
-### Products
+</details>
+
+<details>
+<summary><b>📦 Products & Catalog</b></summary>
+
 | Endpoint | Method | Auth | Description |
 |----------|--------|------|-------------|
-| `/api/products` | GET | No | List products (paginated, filterable) |
-| `/api/products` | POST | Admin | Create new product |
-| `/api/products/[id]` | GET | No | Get product details |
-| `/api/products/[id]` | PUT | Admin | Update product |
-| `/api/products/[id]` | DELETE | Admin | Delete product |
-| `/api/products/categories` | GET | No | List all categories |
-| `/api/products/[id]/reviews` | GET | No | Get product reviews |
-| `/api/products/[id]/reviews` | POST | User | Add review |
+| `/api/products` | `GET` | No | List products (supports pagination & filtering) |
+| `/api/products` | `POST` | Admin | Create a new product |
+| `/api/products/[id]` | `GET`, `PUT`, `DELETE` | Admin* | Get, Update, or Delete product (*GET is public) |
+| `/api/products/categories` | `GET` | No | Retrieve all distinct categories |
+| `/api/products/[id]/reviews` | `GET`, `POST` | User* | Fetch or add product reviews (*GET is public) |
 
-### Orders
+</details>
+
+<details>
+<summary><b>🛒 Orders & Checkout</b></summary>
+
 | Endpoint | Method | Auth | Description |
 |----------|--------|------|-------------|
-| `/api/orders` | GET | Admin | List all orders (paginated) |
-| `/api/orders?stats=1` | GET | Admin | Get dashboard stats |
-| `/api/orders` | POST | No | Create new order |
-| `/api/orders/[id]` | GET | No | Get order details |
-| `/api/orders/update` | POST | Admin | Update order status |
-| `/api/orders/analytics` | GET | Admin | Revenue & order analytics |
+| `/api/orders` | `GET`, `POST` | Admin* | List all orders or Create a new one (*POST is public) |
+| `/api/orders/[id]` | `GET` | No | Retrieve specific order details |
+| `/api/orders/update` | `POST` | Admin | Update order status (e.g., Processing -> Shipped) |
+| `/api/orders/analytics` | `GET` | Admin | Fetch revenue and volume analytics data |
 
-### AI Features
+</details>
+
+<details>
+<summary><b>🧠 AI Engine</b></summary>
+
 | Endpoint | Method | Auth | Description |
 |----------|--------|------|-------------|
-| `/api/ai` | POST | No | Generate grocery list from recipe |
-| `/api/ai/match` | POST | No | Match AI items to products |
-| `/api/ai/history` | GET | User | Get user's AI search history |
-| `/api/ai/history` | POST | User | Save AI search history |
+| `/api/ai` | `POST` | No | Generate structured grocery list from a recipe text |
+| `/api/ai/match` | `POST` | No | Map AI-generated items to actual store products |
+| `/api/ai/history` | `GET`, `POST` | User | Retrieve or save user's AI search history |
 
-### Admin
+</details>
+
+<details>
+<summary><b>👤 Users & Profiles</b></summary>
+
 | Endpoint | Method | Auth | Description |
 |----------|--------|------|-------------|
-| `/api/admin/stats` | GET | Admin | Dashboard statistics |
+| `/api/user/address` | `GET`, `POST` | User | Fetch or add saved delivery addresses |
+| `/api/user/address?id=X` | `DELETE` | User | Remove a saved address |
 
-### User
-| Endpoint | Method | Auth | Description |
-|----------|--------|------|-------------|
-| `/api/user/address` | GET | User | Get saved addresses |
-| `/api/user/address` | POST | User | Add new address |
-| `/api/user/address?id=X` | DELETE | User | Delete address |
+</details>
 
 ---
 
-## 🚢 Deployment
+## 🚢 Deployment Guide
 
-> ⚠️ **Deploy backend and frontend as separate Vercel projects.**
+Supermart is optimized for Vercel. **You must deploy the Backend and Frontend as two separate Vercel projects.**
 
-| Project | Root Directory | Example URL |
-|---------|---------------|-------------|
-| **Backend** | `backend` | `https://api-supermart.vercel.app` |
-| **Frontend** | `frontend/apps/web` | `https://supermart.vercel.app` |
+### 1. Deploy the Backend
+1. Create a new Vercel project and select your repository.
+2. Set **Root Directory** to `backend`.
+3. Add Environment Variables: `MONGODB_URI`, `AUTH_SECRET`, `ADMIN_SECRET`, and your AI API Key.
+4. Deploy! Note your production URL (e.g., `https://api-supermart.vercel.app`).
 
-### Backend Deployment
+### 2. Deploy the Frontend
+1. Create another Vercel project with the same repository.
+2. Set **Root Directory** to `frontend/apps/web`.
+3. Add Environment Variables:
+   - `NEXT_PUBLIC_API_URL` = `https://api-supermart.vercel.app` *(Your Backend URL)*
+   - `NEXTAUTH_URL` = `https://supermart.vercel.app` *(Your Frontend URL)*
+   - `NEXTAUTH_SECRET` = *(Same secret used in Backend)*
+4. Deploy!
 
-1. **Create new Vercel project**
-   - Import your repository
-   - **Root Directory**: `backend`
-   - Framework Preset: Next.js
-
-2. **Environment Variables**
-   ```
-   MONGODB_URI=
-   AUTH_SECRET=
-   ADMIN_SECRET=
-   OPENROUTER_API_KEY=  # or GROQ_API_KEY
-   ```
-
-3. **Deploy** → Get your backend URL (e.g., `https://api-supermart.vercel.app`)
-
-### Frontend Deployment
-
-1. **Create new Vercel project**
-   - Import the same repository
-   - **Root Directory**: `frontend/apps/web`
-   - Framework Preset: Next.js
-
-2. **Environment Variables**
-   ```
-   # The deployed backend URL
-   NEXT_PUBLIC_API_URL=https://api-supermart.vercel.app
-   
-   # Auth (same secret as backend)
-   NEXTAUTH_URL=https://supermart.vercel.app
-   NEXTAUTH_SECRET=your_random_secret_key_here
-   ```
-
-3. **Deploy**
-
-> 💡 **API Calls in Frontend**: Always use `process.env.NEXT_PUBLIC_API_URL + "/api/..."` not just `/api/...`
-
-### Manual Deployment
-
-```bash
-cd backend
-npm install
-npm run build
-npm start
-```
+> 💡 **Pro-Tip:** The frontend heavily relies on `NEXT_PUBLIC_API_URL`. Ensure this perfectly matches your deployed backend URL without a trailing slash.
 
 ---
 
-## 🧪 Testing
+## 🧪 Testing & Quality
+
+Run the backend test suite to ensure system integrity:
 
 ```bash
-# Backend API tests
 cd backend
 npm run test
-
-# Health check
-curl http://localhost:3001/api/health/db
 ```
-
----
-
-## 📁 Project Structure Details
-
-### Backend Models
-- **Order** — User details, items, delivery slot, status, payment
-- **Product** — Name, price, category, stock, image (Base64), description
-- **Review** — Product ratings and comments
-- **AIHistory** — User's AI search history
-- **User** — Addresses and profile data
-
-### Key Features
-- **Rate Limiting** — In-memory IP-based (30 req/min for orders, 20 for AI)
-- **Image Storage** — Base64 in MongoDB (Vercel-compatible)
-- **CORS** — Configured for all API routes
-- **Validation** — Zod schemas for all inputs
-- **Aggregation Pipelines** — Efficient analytics queries
 
 ---
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit changes: `git commit -m 'Add amazing feature'`
-4. Push to branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
+We welcome contributions to make Supermart even better!
+
+1. **Fork** the repository
+2. **Create** your feature branch: `git checkout -b feature/amazing-new-feature`
+3. **Commit** your changes: `git commit -m 'feat: Add some amazing feature'`
+4. **Push** to the branch: `git push origin feature/amazing-new-feature`
+5. Open a **Pull Request**
 
 ---
 
 ## 📄 License
 
-MIT License — see [LICENSE](LICENSE) file.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
 <div align="center">
-
-**Made with ❤️ for Indian grocery shopping**
-
-[Report Bug](https://github.com/yourusername/supermart/issues) • [Request Feature](https://github.com/yourusername/supermart/issues)
-
+  <p>Built with ❤️ for a modern shopping experience.</p>
+  
+  [![Issues](https://img.shields.io/badge/Report_Bug-D32F2F?style=for-the-badge&logo=github&logoColor=white)](https://github.com/yourusername/supermart/issues)
+  [![Feature](https://img.shields.io/badge/Request_Feature-1976D2?style=for-the-badge&logo=github&logoColor=white)](https://github.com/yourusername/supermart/issues)
 </div>
