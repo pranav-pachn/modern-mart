@@ -52,7 +52,7 @@ export async function GET(
     // AUTHORIZATION: Only allow if user owns the order OR user is admin
     const isAdmin = (session.user as any)?.role === "admin";
     const isOwner = order.userEmail === session.user.email;
-
+    
     if (!isAdmin && !isOwner) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403, headers: corsHeaders });
     }

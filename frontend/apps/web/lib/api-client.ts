@@ -14,6 +14,7 @@ export async function apiFetch(endpoint: string, init: RequestInit = {}): Promis
   }
 
   return fetch(endpoint, {
+    credentials: "include", // Send cookies for auth
     ...init,
     headers,
   });

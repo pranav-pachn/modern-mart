@@ -3,7 +3,8 @@ import { ObjectId, Int32 } from "mongodb";
 import { z } from "zod";
 import { getMongoClient } from "@/lib/mongodb";
 import { PRODUCTS_COLLECTION, type ProductDocument } from "@/models/Product";
-import { requireAdminToken, rateLimit } from "@/lib/api-guard";
+import { auth } from "@/lib/auth";
+import { rateLimit } from "@/lib/api-guard";
 
 export const runtime = "nodejs";
 
@@ -60,8 +61,10 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
 }
 
 export async function PUT(req: NextRequest, context: { params: Promise<{ id: string }> }) {
-  const authError = await requireAdminToken(req);
-  if (authError) return authError;
+  const session = await auth();
+  if (!session || session.user?.role !== "admin") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
+  }
 
   const limited = rateLimit(req, { limit: 20, windowMs: 60_000 });
   if (limited) return limited;
@@ -121,8 +124,10 @@ export async function PUT(req: NextRequest, context: { params: Promise<{ id: str
 }
 
 export async function DELETE(req: NextRequest, context: { params: Promise<{ id: string }> }) {
-  const authError = await requireAdminToken(req);
-  if (authError) return authError;
+  const session = await auth();
+  if (!session || session.user?.role !== "admin") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
+  }
 
   const limited = rateLimit(req, { limit: 10, windowMs: 60_000 });
   if (limited) return limited;
