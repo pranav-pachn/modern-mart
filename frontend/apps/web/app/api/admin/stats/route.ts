@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 import { getMongoClient } from "@/lib/mongodb";
 import { ORDERS_COLLECTION, type OrderDocument } from "@/models/Order";
-import { requireAdminToken } from "@/lib/api-guard";
 
 export const runtime = "nodejs";
 
@@ -40,10 +40,14 @@ function getYesterdayRange(startOfToday: Date) {
   return { startOfYesterday, endOfYesterday: startOfToday };
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(req: NextRequest) {
+  const session = await auth();
+
+  if (!session || session.user?.role !== "admin") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
-    const authError = await requireAdminToken(request);
-    if (authError) return authError;
 
     const client = await getMongoClient();
     const db = client.db();
