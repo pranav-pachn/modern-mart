@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getMongoClient } from "@/lib/mongodb";
 import { ORDERS_COLLECTION, type OrderDocument } from "@/models/Order";
-import { requireAdminToken } from "@/lib/api-guard";
+import { requireAdmin } from "@/lib/api-guard";
 
 export const runtime = "nodejs";
 
@@ -17,7 +17,7 @@ export async function OPTIONS() {
 
 export async function GET(request: NextRequest) {
   try {
-    const authError = await requireAdminToken(request);
+    const authError = await requireAdmin();
     if (authError) return authError;
 
     const client = await getMongoClient();
