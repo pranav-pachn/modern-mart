@@ -1,278 +1,173 @@
-<div align="center">
-  <img src="https://via.placeholder.com/150x150/4CAF50/FFFFFF?text=🛒" alt="Supermart Logo" width="120" height="120" style="border-radius: 20px; margin-bottom: 20px;" />
-  
-  # 🛒 Supermart
-  
-  **The Next-Generation, AI-Powered Indian Grocery E-Commerce Platform**
-  
-  <p align="center">
-    <a href="https://nextjs.org/"><img src="https://img.shields.io/badge/Next.js-15-000000?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js" /></a>
-    <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" /></a>
-    <a href="https://www.mongodb.com/"><img src="https://img.shields.io/badge/MongoDB-Atlas-47A248?style=for-the-badge&logo=mongodb&logoColor=white" alt="MongoDB" /></a>
-    <a href="https://tailwindcss.com/"><img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS" /></a>
-    <a href="https://vercel.com/"><img src="https://img.shields.io/badge/Vercel-Ready-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Vercel" /></a>
-  </p>
+# Supermart
 
-  <p align="center">
-    <b><a href="#-features">Features</a></b> •
-    <b><a href="#%EF%B8%8F-architecture">Architecture</a></b> •
-    <b><a href="#-quick-start">Quick Start</a></b> •
-    <b><a href="#-api-reference">API Reference</a></b> •
-    <b><a href="#-deployment-guide">Deployment</a></b>
-  </p>
-</div>
+Supermart is a grocery e-commerce app built with Next.js in a Turborepo. The current codebase ships a single full-stack web app in `frontend/apps/web` with App Router pages, API routes, Auth.js authentication, MongoDB models, admin tools, and AI-assisted shopping flows.
 
----
-
-## ✨ Overview
-
-**Supermart** is a modern, scalable, and intelligent e-commerce platform tailored for the Indian grocery market. Built with a decoupled architecture using the latest Next.js features, it seamlessly integrates AI to revolutionize how users shop for groceries—from smart recipe parsing to automated ingredient matching.
-
----
-
-## 🚀 Features
-
-### 🛍️ For the Customers
-* **🧠 AI Recipe Assistant:** Input a dish like *"Paneer Butter Masala for 4"* and instantly receive a curated, auto-calculated grocery list.
-* **🔍 Smart Semantic Search:** Find products effortlessly by name, category, or related terms with intelligent filtering.
-* **🚚 Flexible Delivery Slots:** Schedule deliveries with Morning, Afternoon, or Evening slot options.
-* **⭐ Interactive Reviews & Ratings:** Build trust with a robust customer review and star-rating system.
-* **📍 Smart Address Management:** Save, manage, and label multiple addresses (Home, Work) for lightning-fast checkouts.
-* **📦 Real-Time Order Tracking:** Keep users informed with transparent, real-time status updates.
-
-### 💼 For the Admins
-* **📈 Real-Time Analytics Dashboard:** Monitor revenue, track order volumes, and analyze day-over-day growth metrics visually.
-* **🛒 Advanced Order Management:** Filter, view, and update order statuses with ease.
-* **📦 Comprehensive Product CRUD:** Manage inventory, upload images, and update product details seamlessly.
-* **⚠️ Intelligent Inventory Tracking:** Proactive stock management with automated low-stock alerts.
-* **💬 WhatsApp Integration:** Instantly connect with customers via click-to-message for direct order updates.
-
-### 🛡️ Security & Architecture
-* **🔒 NextAuth v5 (Auth.js):** Iron-clad JWT authentication and session management.
-* **🚧 Role-Based Access Control (RBAC):** Strict middleware protection for admin-only routes and actions.
-* **⏱️ Intelligent Rate Limiting:** IP-based protection for sensitive endpoints (e.g., checkout, AI generation).
-* **⚡ Optimized MongoDB Aggregations:** High-performance queries ensuring dashboard analytics load instantly.
-
----
-
-## 🏗️ Architecture
-
-Supermart employs a decoupled, highly scalable monorepo structure, separating the robust Next.js API backend from the blazing-fast Next.js frontend.
+## What is in this repo
 
 ```text
 supermart/
-├── backend/                  # ⚙️ Next.js 15 API Backend (App Router)
-│   ├── app/api/              # RESTful API Endpoints
-│   │   ├── ai/               # AI processing & OpenRouter/Groq integrations
-│   │   ├── admin/            # Analytics & Admin operations
-│   │   ├── orders/           # Order processing & lifecycle
-│   │   ├── products/         # Product catalog & reviews
-│   │   └── user/             # User profiles & address management
-│   ├── lib/                  # Core Utilities (DB connection, Auth, Rate Limit)
-│   ├── models/               # MongoDB Mongoose Schemas & TS Types
-│   └── middleware.ts         # Edge Middleware for Security & CORS
-│
-└── frontend/                 # 💻 Next.js Frontend App
-    └── apps/web/
-        ├── app/              # UI Routes & Pages
-        ├── components/       # Reusable React UI Components
-        └── lib/              # API Clients & Frontend Utils
+├── README.md
+├── docs/
+├── frontend/
+│   ├── apps/
+│   │   └── web/              # Next.js app
+│   │       ├── app/          # Pages and API routes
+│   │       ├── components/   # UI components
+│   │       ├── context/      # React context
+│   │       ├── lib/          # Auth, MongoDB, helpers
+│   │       ├── models/       # MongoDB models
+│   │       ├── scripts/      # Utility scripts like admin seeding
+│   │       └── store/        # Client state
+│   ├── packages/
+│   │   ├── eslint-config/
+│   │   ├── typescript-config/
+│   │   └── ui/
+│   ├── package.json
+│   └── turbo.json
+└── package.json
 ```
 
----
+## Features
 
-## 🏁 Quick Start
+- Customer storefront with product browsing, product detail pages, cart, checkout, and order history
+- Admin area for product management, order management, and dashboard stats
+- Auth.js sign-in flow with role-aware route protection
+- MongoDB-backed users, products, reviews, orders, and AI history
+- AI endpoints for grocery list generation and product matching
+- Review and rating support on product pages
+- Admin seeding script for bootstrapping the first admin account
 
-Get Supermart up and running on your local machine in minutes.
+## Tech stack
+
+- Next.js 16
+- React 19
+- TypeScript
+- Turborepo
+- MongoDB
+- Auth.js / NextAuth v5 beta
+- Tailwind CSS v4
+- Zustand
+
+## Getting started
 
 ### Prerequisites
-* **Node.js** (v20+ recommended)
-* **MongoDB** (Atlas account or local instance)
-* **AI API Key** ([OpenRouter](https://openrouter.ai/) or [Groq](https://groq.com/))
 
-### 1. Clone & Install
+- Node.js 20+
+- npm 10+
+- A MongoDB database
+
+### Install dependencies
+
+From the repo root:
 
 ```bash
-git clone https://github.com/yourusername/supermart.git
-cd supermart
-
-# Install Backend dependencies
-cd backend
-npm install
-
-# Install Frontend dependencies
-cd ../frontend/apps/web
+cd frontend
 npm install
 ```
 
-### 2. Environment Configuration
+### Configure environment variables
 
-**Backend (`backend/.env`):**
-```env
-# Database Connection
-MONGODB_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/supermart
+Copy the app env template:
 
-# Authentication Secrets (Generate with: openssl rand -base64 32)
-AUTH_SECRET=your_super_secret_auth_key
-ADMIN_SECRET=your_admin_api_secret
-
-# AI Providers (At least one is required)
-OPENROUTER_API_KEY=sk-or-v1-...
-# GROQ_API_KEY=gsk_...
+```bash
+cd frontend/apps/web
+Copy-Item .env.example .env.local
 ```
 
-**Frontend (`frontend/apps/web/.env.local`):**
-```env
-# API Connection
-NEXT_PUBLIC_API_URL=http://localhost:3001
+Minimum required variables for local development:
 
-# Auth (Must match backend AUTH_SECRET exactly)
+```env
+MONGODB_URI=your_mongodb_connection_string
+NEXTAUTH_SECRET=your_random_secret
 NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=your_super_secret_auth_key
 ```
 
-### 3. Initialize Database
+Optional variables:
 
-Populate your local database with initial mock data and indexes.
+- `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` for Google login
+- `OPENROUTER_API_KEY` or `GROQ_API_KEY` for AI features
+- `NEXT_PUBLIC_RAZORPAY_KEY_ID` for payment UI integration
+- `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and `ADMIN_NAME` for admin seeding
+
+## Run locally
+
+Start the web app from the frontend workspace:
+
 ```bash
-cd backend
-npm run setup-db
-```
-
-### 4. Fire It Up! 🔥
-
-Launch both servers concurrently:
-
-**Terminal 1 (Backend):**
-```bash
-cd backend
+cd frontend
 npm run dev
-# Running on http://localhost:3001
 ```
 
-**Terminal 2 (Frontend):**
+The app runs on `http://localhost:3000`.
+
+If you only want to run the app package directly:
+
 ```bash
 cd frontend/apps/web
 npm run dev
-# Running on http://localhost:3000
 ```
 
----
+## Useful scripts
 
-## 📚 API Reference
+From `frontend/`:
 
-<details>
-<summary><b>🛠️ General & Health</b></summary>
+- `npm run dev` - run the Turborepo dev task
+- `npm run build` - build all workspaces
+- `npm run lint` - run lint tasks
+- `npm run typecheck` - run TypeScript checks
+- `npm run format` - run formatting tasks
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/health/db` | `GET` | Verify MongoDB connection status |
+From `frontend/apps/web/`:
 
-</details>
+- `npm run dev` - start Next.js with Turbopack
+- `npm run build` - production build
+- `npm run start` - start the production server
+- `npm run lint` - run ESLint
+- `npm run typecheck` - run TypeScript with no emit
+- `npm run seed:admin` - create or update an admin user
 
-<details>
-<summary><b>📦 Products & Catalog</b></summary>
+## Admin bootstrap
 
-| Endpoint | Method | Auth | Description |
-|----------|--------|------|-------------|
-| `/api/products` | `GET` | No | List products (supports pagination & filtering) |
-| `/api/products` | `POST` | Admin | Create a new product |
-| `/api/products/[id]` | `GET`, `PUT`, `DELETE` | Admin* | Get, Update, or Delete product (*GET is public) |
-| `/api/products/categories` | `GET` | No | Retrieve all distinct categories |
-| `/api/products/[id]/reviews` | `GET`, `POST` | User* | Fetch or add product reviews (*GET is public) |
-
-</details>
-
-<details>
-<summary><b>🛒 Orders & Checkout</b></summary>
-
-| Endpoint | Method | Auth | Description |
-|----------|--------|------|-------------|
-| `/api/orders` | `GET`, `POST` | Admin* | List all orders or Create a new one (*POST is public) |
-| `/api/orders/[id]` | `GET` | No | Retrieve specific order details |
-| `/api/orders/update` | `POST` | Admin | Update order status (e.g., Processing -> Shipped) |
-| `/api/orders/analytics` | `GET` | Admin | Fetch revenue and volume analytics data |
-
-</details>
-
-<details>
-<summary><b>🧠 AI Engine</b></summary>
-
-| Endpoint | Method | Auth | Description |
-|----------|--------|------|-------------|
-| `/api/ai` | `POST` | No | Generate structured grocery list from a recipe text |
-| `/api/ai/match` | `POST` | No | Map AI-generated items to actual store products |
-| `/api/ai/history` | `GET`, `POST` | User | Retrieve or save user's AI search history |
-
-</details>
-
-<details>
-<summary><b>👤 Users & Profiles</b></summary>
-
-| Endpoint | Method | Auth | Description |
-|----------|--------|------|-------------|
-| `/api/user/address` | `GET`, `POST` | User | Fetch or add saved delivery addresses |
-| `/api/user/address?id=X` | `DELETE` | User | Remove a saved address |
-
-</details>
-
----
-
-## 🚢 Deployment Guide
-
-Supermart is optimized for Vercel. **You must deploy the Backend and Frontend as two separate Vercel projects.**
-
-### 1. Deploy the Backend
-1. Create a new Vercel project and select your repository.
-2. Set **Root Directory** to `backend`.
-3. Add Environment Variables: `MONGODB_URI`, `AUTH_SECRET`, `ADMIN_SECRET`, and your AI API Key.
-4. Deploy! Note your production URL (e.g., `https://api-supermart.vercel.app`).
-
-### 2. Deploy the Frontend
-1. Create another Vercel project with the same repository.
-2. Set **Root Directory** to `frontend/apps/web`.
-3. Add Environment Variables:
-   - `NEXT_PUBLIC_API_URL` = `https://api-supermart.vercel.app` *(Your Backend URL)*
-   - `NEXTAUTH_URL` = `https://supermart.vercel.app` *(Your Frontend URL)*
-   - `NEXTAUTH_SECRET` = *(Same secret used in Backend)*
-4. Deploy!
-
-> 💡 **Pro-Tip:** The frontend heavily relies on `NEXT_PUBLIC_API_URL`. Ensure this perfectly matches your deployed backend URL without a trailing slash.
-
----
-
-## 🧪 Testing & Quality
-
-Run the backend test suite to ensure system integrity:
+To create the first admin account:
 
 ```bash
-cd backend
-npm run test
+cd frontend/apps/web
+npm run seed:admin
 ```
 
----
+Defaults used by the script if you do not set env vars:
 
-## 🤝 Contributing
+- Email: `admin@gmail.com`
+- Password: `admin123`
+- Name: `Admin`
 
-We welcome contributions to make Supermart even better!
+Change these with `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and `ADMIN_NAME` in `.env.local`.
 
-1. **Fork** the repository
-2. **Create** your feature branch: `git checkout -b feature/amazing-new-feature`
-3. **Commit** your changes: `git commit -m 'feat: Add some amazing feature'`
-4. **Push** to the branch: `git push origin feature/amazing-new-feature`
-5. Open a **Pull Request**
+## API surface
 
----
+The app exposes API routes under `frontend/apps/web/app/api`.
 
-## 📄 License
+Main route groups:
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+- `/api/auth` for login and registration
+- `/api/products` for catalog, categories, details, and reviews
+- `/api/orders` for order creation, lookup, analytics, and status updates
+- `/api/user` for addresses and user order data
+- `/api/admin/stats` for admin dashboard metrics
+- `/api/ai` for AI generation, history, and product matching
+- `/api/health/db` for database connectivity checks
 
----
+## Deployment
 
-<div align="center">
-  <p>Built with ❤️ for a modern shopping experience.</p>
-  
-  [![Issues](https://img.shields.io/badge/Report_Bug-D32F2F?style=for-the-badge&logo=github&logoColor=white)](https://github.com/yourusername/supermart/issues)
-  [![Feature](https://img.shields.io/badge/Request_Feature-1976D2?style=for-the-badge&logo=github&logoColor=white)](https://github.com/yourusername/supermart/issues)
-</div>
+Deploy the Next.js app as a single Vercel project with:
+
+- Root directory: `frontend/apps/web`
+- Node version: 20+
+- Environment variables from `frontend/apps/web/.env.example`
+
+Important note: older docs in this repo may still refer to a separate `backend/` deployment. The current codebase does not use that structure for the main app described here.
+
+## Notes
+
+- The root `.env.example` appears to describe an older split frontend/backend setup.
+- The app-level env template in `frontend/apps/web/.env.example` is the correct reference for the current app.
