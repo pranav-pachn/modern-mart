@@ -1,5 +1,5 @@
 const { MongoClient } = require("mongodb");
-require("dotenv").config({ path: "./backend/.env.local" });
+require("dotenv").config({ path: "./frontend/apps/web/.env.local" });
 
 async function check() {
   const uri = process.env.MONGODB_URI;

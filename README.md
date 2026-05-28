@@ -165,9 +165,8 @@ Deploy the Next.js app as a single Vercel project with:
 - Node version: 20+
 - Environment variables from `frontend/apps/web/.env.example`
 
-Important note: older docs in this repo may still refer to a separate `backend/` deployment. The current codebase does not use that structure for the main app described here.
+Important note: The current codebase uses the single Next.js app under `frontend/apps/web`. Use the app-level env template at `frontend/apps/web/.env.example` for environment variables.
 
 ## Notes
 
-- The root `.env.example` appears to describe an older split frontend/backend setup.
-- The app-level env template in `frontend/apps/web/.env.example` is the correct reference for the current app.
+- Use `frontend/apps/web/.env.example` as the environment template for the current app.
