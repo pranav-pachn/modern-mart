@@ -154,15 +154,21 @@ export default function AIGrocery() {
 
                 <div className="mt-4 flex items-end justify-between">
                   {item.product ? (
-                    <>
-                      <p className="font-bold text-zinc-900">₹{item.product.price}</p>
-                      <button
-                        onClick={() => addToCart(item.product)}
-                        className="rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700"
-                      >
-                        Add
-                      </button>
-                    </>
+                    (() => {
+                      const product = item.product;
+
+                      return (
+                        <>
+                          <p className="font-bold text-zinc-900">₹{product.price}</p>
+                          <button
+                            onClick={() => addToCart(product)}
+                            className="rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700"
+                          >
+                            Add
+                          </button>
+                        </>
+                      );
+                    })()
                   ) : (
                     <p className="text-xs font-medium text-red-500">Not in standard catalog</p>
                   )}
@@ -198,10 +204,16 @@ export default function AIGrocery() {
                     </div>
                     <div className="mt-4 flex items-end justify-between">
                       {item.product ? (
-                        <>
-                          <p className="font-bold text-zinc-900">₹{item.product.price}</p>
-                          <button onClick={() => addToCart(item.product)} className="rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700">Add</button>
-                        </>
+                        (() => {
+                          const product = item.product;
+
+                          return (
+                            <>
+                              <p className="font-bold text-zinc-900">₹{product.price}</p>
+                              <button onClick={() => addToCart(product)} className="rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700">Add</button>
+                            </>
+                          );
+                        })()
                       ) : <p className="text-xs font-medium text-red-500">Not in standard catalog</p>}
                     </div>
                   </div>

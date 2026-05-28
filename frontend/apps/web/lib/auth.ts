@@ -2,7 +2,7 @@
  * Full NextAuth config — Node.js runtime only.
  *
  * Spreads the Edge-safe authConfig and adds DB-dependent providers.
- * Import this ONLY in API routes (runtime: "nodejs"), never in middleware.
+ * Import this ONLY in API routes (runtime: "nodejs"), never in proxy.
  */
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";

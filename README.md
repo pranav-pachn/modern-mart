@@ -36,7 +36,7 @@ graph TD
     Client[Client Browser] -->|HTTPS| Vercel[Vercel Edge Network]
     
     subgraph "Next.js Application (frontend/apps/web)"
-        Vercel -->|Middleware| EdgeAuth[Edge Runtime<br>auth.config.ts]
+        Vercel -->|Proxy| EdgeAuth[Edge Runtime<br>auth.config.ts]
         EdgeAuth -->|API Requests| NodeRuntime[Node.js Serverless Functions]
         EdgeAuth -->|Page Requests| React[React Server Components]
         

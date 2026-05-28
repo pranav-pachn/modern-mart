@@ -1,5 +1,5 @@
 /**
- * Next.js Middleware — runs in Edge Runtime.
+ * Next.js Proxy — runs before requests reach the app.
  *
  * Imports only from auth.config.ts (Edge-safe, no Node.js modules).
  * auth.ts (which imports mongodb/bcryptjs) is NEVER imported here.
@@ -7,9 +7,9 @@
 import NextAuth from "next-auth";
 import { authConfig } from "@/lib/auth.config";
 
-export const { auth: middleware } = NextAuth(authConfig);
+export const { auth: proxy } = NextAuth(authConfig);
 
-export default middleware;
+export default proxy;
 
 export const config = {
   matcher: [

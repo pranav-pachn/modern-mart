@@ -1,7 +1,7 @@
 /**
  * Edge-safe NextAuth config — NO Node.js imports here.
  *
- * This file is imported by middleware.ts which runs in Edge Runtime.
+ * This file is imported by proxy.ts which runs in Edge Runtime.
  * It must NOT import mongodb, bcryptjs, or any Node.js-only module.
  * Providers (which need the DB) live only in auth.ts.
  */
@@ -40,14 +40,18 @@ export const authConfig: NextAuthConfig = {
     },
     session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id as string | undefined;
-        session.user.role = token.role as string | undefined;
+        if (token.id) {
+          session.user.id = token.id;
+        }
+        if (token.role) {
+          session.user.role = token.role;
+        }
       }
       return session;
     },
 
     /**
-     * authorized() is called by middleware to decide whether a request
+    * authorized() is called by proxy to decide whether a request
      * can proceed. Returning true allows, returning a Response redirects.
      */
     authorized({ auth: session, request: { nextUrl } }) {
