@@ -2,7 +2,7 @@
   "extends": "../../packages/typescript-config/nextjs.json",
   "compilerOptions": {
     "incremental": true,
-    "baseUrl": ".",
+    "baseUrl": "./",
     "paths": {
       "@/*": [
         "./*"
