@@ -4,6 +4,18 @@ Supermart is a grocery e-commerce app built with Next.js in a Turborepo. The cur
 
 ## What is in this repo
 
+## Screenshots
+
+<div align="center">
+  <img src="https://via.placeholder.com/800x450?text=Landing+Page" alt="Landing Page" width="49%">
+  <img src="https://via.placeholder.com/800x450?text=Shop+and+Cart" alt="Shop and Cart" width="49%">
+  <br>
+  <img src="https://via.placeholder.com/800x450?text=AI+Grocery+Generator" alt="AI Grocery Generator" width="49%">
+  <img src="https://via.placeholder.com/800x450?text=Admin+Dashboard" alt="Admin Dashboard" width="49%">
+</div>
+
+*(Note: Replace the placeholder URLs above with actual paths to your screenshots, e.g., `/docs/landing.png`)*
+
 ```text
 supermart/
 ├── README.md

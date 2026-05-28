@@ -8,6 +8,24 @@
 import type { NextAuthConfig } from "next-auth";
 import { NextResponse } from "next/server";
 
+declare module "next-auth" {
+  interface User {
+    id?: string;
+    role?: string;
+  }
+  interface Session {
+    user: User;
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    id?: string;
+    role?: string;
+  }
+}
+
+
 export const authConfig: NextAuthConfig = {
   providers: [], // Actual providers (Credentials/Google) added in auth.ts
   session: { strategy: "jwt" },
@@ -16,14 +34,14 @@ export const authConfig: NextAuthConfig = {
     jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.role = (user as any).role;
+        token.role = user.role;
       }
       return token;
     },
     session({ session, token }) {
       if (session.user) {
-        (session.user as any).id = token.id;
-        (session.user as any).role = token.role;
+        session.user.id = token.id as string | undefined;
+        session.user.role = token.role as string | undefined;
       }
       return session;
     },
@@ -34,7 +52,7 @@ export const authConfig: NextAuthConfig = {
      */
     authorized({ auth: session, request: { nextUrl } }) {
       const isLoggedIn = !!session?.user;
-      const isAdmin = (session?.user as any)?.role === "admin";
+      const isAdmin = session?.user?.role === "admin";
       const { pathname } = nextUrl;
 
       // Not logged in → redirect to /login with callback

@@ -1,16 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { useCart } from "@/store/cart";
+import { useCart, CartProduct } from "@/store/cart";
 import { Sparkles, ShoppingBag, Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { saveAiHistory } from "@/lib/ai-history";
 import { apiFetch } from "@/lib/api-client";
 
+interface AIResultItem {
+  item: string;
+  qty?: string;
+  product?: CartProduct;
+}
+
 export default function AIGrocery() {
   const [input, setInput] = useState("");
-  const [results, setResults] = useState<any[]>([]);
-  const [suggestedResults, setSuggestedResults] = useState<any[]>([]);
+  const [results, setResults] = useState<AIResultItem[]>([]);
+  const [suggestedResults, setSuggestedResults] = useState<AIResultItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorPrompt, setErrorPrompt] = useState("");
   const { addToCart } = useCart();
@@ -33,8 +39,8 @@ export default function AIGrocery() {
       if (!res.ok) throw new Error("AI fetch failed");
       const data = await res.json();
 
-      let parsedItems: any[] = [];
-      let parsedSuggested: any[] = [];
+      let parsedItems: AIResultItem[] = [];
+      let parsedSuggested: AIResultItem[] = [];
       try {
         const rawResult = typeof data.result === "string" ? JSON.parse(data.result) : data.result;
         if (Array.isArray(rawResult)) {

@@ -10,7 +10,9 @@ import Credentials from "next-auth/providers/credentials";
 import clientPromise from "@/lib/mongodb";
 import { authConfig } from "@/lib/auth.config";
 
-const providers: any[] = [];
+import { Provider } from "next-auth/providers";
+
+const providers: Provider[] = [];
 
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   providers.push(
@@ -63,7 +65,4 @@ const nextAuthResult = NextAuth({
   providers,
 });
 
-export const handlers = nextAuthResult.handlers;
-export const auth: any = nextAuthResult.auth;
-export const signIn: any = nextAuthResult.signIn;
-export const signOut: any = nextAuthResult.signOut;
+export const { handlers, auth, signIn, signOut } = nextAuthResult;

@@ -24,11 +24,8 @@ type CartState = {
   deliveryFee: number;
   total: number;
   addToCart: (product: CartProduct) => void;
-  addItem: (product: CartProduct) => void;
   increaseQuantity: (id: string) => void;
-  increaseQty: (id: string) => void;
   decreaseQuantity: (id: string) => void;
-  decreaseQty: (id: string) => void;
   removeItem: (id: string) => void;
   clearCart: () => void;
 };
@@ -86,8 +83,6 @@ export const useCart = create<CartState>()(
       total: 0,
       addToCart: (product) =>
         set((state) => withTotals(addProduct(state.cart, product))),
-      addItem: (product) =>
-        set((state) => withTotals(addProduct(state.cart, product))),
       increaseQuantity: (id) =>
         set((state) =>
           withTotals(
@@ -98,27 +93,7 @@ export const useCart = create<CartState>()(
             ),
           ),
         ),
-      increaseQty: (id) =>
-        set((state) =>
-          withTotals(
-            state.cart.map((item) =>
-              item.id === id 
-                ? { ...item, quantity: item.stock !== undefined && item.quantity >= item.stock ? item.quantity : item.quantity + 1 } 
-                : item,
-            ),
-          ),
-        ),
       decreaseQuantity: (id) =>
-        set((state) =>
-          withTotals(
-            state.cart
-              .map((item) =>
-                item.id === id ? { ...item, quantity: Math.max(0, item.quantity - 1) } : item,
-              )
-              .filter((item) => item.quantity > 0),
-          ),
-        ),
-      decreaseQty: (id) =>
         set((state) =>
           withTotals(
             state.cart
