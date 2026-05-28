@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -10,12 +11,10 @@ export default function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMsg("");
     setLoading(true);
 
     try {
@@ -32,7 +31,7 @@ export default function RegisterPage() {
 
       router.push("/login?registered=true");
     } catch (error: any) {
-      setErrorMsg(error.message);
+      toast.error(error.message);
     } finally {
       setLoading(false);
     }
@@ -89,8 +88,6 @@ export default function RegisterPage() {
               minLength={6}
             />
           </div>
-
-          {errorMsg && <div className="login-error">⚠️ {errorMsg}</div>}
 
           <button type="submit" className="login-submit-btn" disabled={loading}>
             {loading ? "Creating account..." : "Create Account"}

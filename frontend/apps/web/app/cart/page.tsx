@@ -1,6 +1,7 @@
 "use client";
 
 import { useCart } from "@/store/cart";
+import toast from "react-hot-toast";
 
 export default function CartPage() {
   const {
@@ -37,7 +38,7 @@ export default function CartPage() {
               </a>
               <button
                 type="button"
-                onClick={clearCart}
+                onClick={() => { clearCart(); toast.success("Cart cleared"); }}
                 className="inline-flex h-11 items-center justify-center rounded-xl border border-red-200 px-4 text-sm font-semibold text-red-600 transition hover:bg-red-50"
               >
                 Clear cart
@@ -82,7 +83,7 @@ export default function CartPage() {
                       </div>
                       <button
                         type="button"
-                        onClick={() => removeItem(item.id)}
+                        onClick={() => { removeItem(item.id); toast.success("Item removed"); }}
                         className="text-sm font-semibold text-red-600 hover:text-red-700"
                       >
                         Remove

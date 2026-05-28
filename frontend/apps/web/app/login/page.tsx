@@ -1,17 +1,25 @@
 "use client";
 
 import { signIn, useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
 export default function LoginPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (searchParams?.get("registered") === "true") {
+      toast.success("Account created! Please sign in.");
+      router.replace("/login");
+    }
+  }, [searchParams, router]);
 
   useEffect(() => {
     if (status === "authenticated") {
@@ -25,7 +33,6 @@ export default function LoginPage() {
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMsg("");
     setLoading(true);
     const res = await signIn("credentials", {
       email,
@@ -34,7 +41,7 @@ export default function LoginPage() {
     });
     setLoading(false);
     if (res?.error) {
-      setErrorMsg("Invalid email or password.");
+      toast.error("Invalid email or password.");
     }
   };
 
@@ -123,12 +130,6 @@ export default function LoginPage() {
                 autoComplete="current-password"
               />
             </div>
-
-            {errorMsg && (
-              <div className="login-error">
-                ⚠️ {errorMsg}
-              </div>
-            )}
 
             <button
               type="submit"

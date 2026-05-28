@@ -4,17 +4,7 @@ Supermart is a grocery e-commerce app built with Next.js in a Turborepo. The cur
 
 ## What is in this repo
 
-## Screenshots
 
-<div align="center">
-  <img src="https://via.placeholder.com/800x450?text=Landing+Page" alt="Landing Page" width="49%">
-  <img src="https://via.placeholder.com/800x450?text=Shop+and+Cart" alt="Shop and Cart" width="49%">
-  <br>
-  <img src="https://via.placeholder.com/800x450?text=AI+Grocery+Generator" alt="AI Grocery Generator" width="49%">
-  <img src="https://via.placeholder.com/800x450?text=Admin+Dashboard" alt="Admin Dashboard" width="49%">
-</div>
-
-*(Note: Replace the placeholder URLs above with actual paths to your screenshots, e.g., `/docs/landing.png`)*
 
 ```text
 supermart/
@@ -38,6 +28,32 @@ supermart/
 │   └── turbo.json
 └── package.json
 ```
+
+## Architecture
+
+```mermaid
+graph TD
+    Client[Client Browser] -->|HTTPS| Vercel[Vercel Edge Network]
+    
+    subgraph "Next.js Application (frontend/apps/web)"
+        Vercel -->|Middleware| EdgeAuth[Edge Runtime<br>auth.config.ts]
+        EdgeAuth -->|API Requests| NodeRuntime[Node.js Serverless Functions]
+        EdgeAuth -->|Page Requests| React[React Server Components]
+        
+        subgraph "Backend Services"
+            NodeRuntime --> AuthAPI[Auth API<br>auth.ts + bcryptjs]
+            NodeRuntime --> CoreAPI[Products, Orders, Admin Stats]
+            NodeRuntime --> AIAPI[AI Generator<br>with Failover]
+        end
+    end
+    
+    AuthAPI -->|mongodb driver| MongoDB[(MongoDB Atlas)]
+    CoreAPI -->|mongodb driver| MongoDB
+    
+    AIAPI -->|Primary| OpenRouter[OpenRouter API]
+    AIAPI -.->|Fallback| Groq[Groq API]
+```
+
 
 ## Features
 

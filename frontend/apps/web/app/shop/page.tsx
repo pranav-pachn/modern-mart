@@ -8,6 +8,7 @@ import ProductCard from "@/components/ProductCard";
 import { ProductGridSkeleton } from "@/components/Skeletons";
 import { useCart } from "@/store/cart";
 import { apiFetch } from "@/lib/api-client";
+import toast from "react-hot-toast";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -199,6 +200,7 @@ function ShopContent() {
   const handleAddToCart = (product: Product) => {
     addToCart(product);
     setAddedProductId(product.id);
+    toast.success("Added to cart!");
     window.setTimeout(() => setAddedProductId(null), 1200);
   };
 
