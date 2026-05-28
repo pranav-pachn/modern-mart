@@ -1,17 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 
 export default function RegisterPage() {
+  const { data: session, status } = useSession();
   const router = useRouter();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.replace((session?.user as any)?.role === "admin" ? "/admin" : "/shop");
+    }
+  }, [status, session, router]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +44,14 @@ export default function RegisterPage() {
       setLoading(false);
     }
   };
+
+  if (status === "loading" || status === "authenticated") {
+    return (
+      <div className="login-loading">
+        <div className="spinner" />
+      </div>
+    );
+  }
 
   return (
     <div className="login-root">

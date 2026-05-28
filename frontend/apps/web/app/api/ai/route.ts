@@ -101,6 +101,9 @@ CRITICAL RULES:
     for (let attempts = 0; attempts < providers.length; attempts++) {
       const pIndex = (currentProviderIndex + attempts) % providers.length;
       const provider = providers[pIndex];
+      if (!provider) {
+        continue;
+      }
 
       const headers: Record<string, string> = {
         Authorization: `Bearer ${provider.key}`,

@@ -15,6 +15,9 @@ export async function processImageUpload(imageString: string, _productId: string
     }
 
     const base64Data = matches[2];
+    if (!base64Data) {
+      return imageString;
+    }
     const sizeInMB = (base64Data.length * 3) / 4 / 1024 / 1024;
 
     // Reject if image is too large

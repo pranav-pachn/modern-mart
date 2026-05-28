@@ -49,7 +49,7 @@ export async function POST(req: Request) {
       name: parsed.data.name,
       email: parsed.data.email,
       password,
-      role: "user",
+      role: "customer",
       addresses: [],
       createdAt: new Date(),
       updatedAt: new Date(),

@@ -9,6 +9,10 @@ export default function LoginPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const callbackUrl = searchParams?.get("callbackUrl") || "";
+  const fallbackUrl = callbackUrl || "/shop";
+  const destination =
+    (session?.user as any)?.role === "admin" ? (callbackUrl || "/admin") : fallbackUrl;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,13 +27,9 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      if ((session.user as any)?.role === "admin") {
-        router.replace("/admin");
-      } else {
-        router.replace("/shop");
-      }
+      router.replace(destination);
     }
-  }, [status, session, router]);
+  }, [status, router, destination]);
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,11 +37,17 @@ export default function LoginPage() {
     const res = await signIn("credentials", {
       email,
       password,
+      callbackUrl: fallbackUrl,
       redirect: false,
     });
     setLoading(false);
     if (res?.error) {
       toast.error("Invalid email or password.");
+      return;
+    }
+
+    if (res?.ok) {
+      router.replace(destination);
     }
   };
 
@@ -69,7 +75,7 @@ export default function LoginPage() {
 
           <button
             id="google-signin-btn"
-            onClick={() => signIn("google")}
+            onClick={() => signIn("google", { callbackUrl: fallbackUrl })}
             className="google-btn"
           >
             <svg width="20" height="20" viewBox="0 0 18 18" fill="none" aria-hidden="true">
