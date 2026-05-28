@@ -57,13 +57,32 @@ graph TD
 
 ## Features
 
-- Customer storefront with product browsing, product detail pages, cart, checkout, and order history
-- Admin area for product management, order management, and dashboard stats
-- Auth.js sign-in flow with role-aware route protection
-- MongoDB-backed users, products, reviews, orders, and AI history
-- AI endpoints for grocery list generation and product matching
-- Review and rating support on product pages
-- Admin seeding script for bootstrapping the first admin account
+- **Customer storefront**: Product browsing, detailed product pages, cart management, checkout (COD and Online via Razorpay), and order history tracking.
+- **Admin Dashboard**: Manage products, orders, and view daily sales statistics with role-based access.
+- **Authentication**: Auth.js sign-in flow with protected routes (admin vs customer).
+- **Database**: MongoDB integration for users, products, reviews, orders, and AI history.
+- **AI-Powered Shopping Assistant**: Generate grocery lists and find product matches seamlessly using LLMs.
+- **Interactive UI**: Micro-animations, responsive design, and intuitive user experiences built with Tailwind CSS and Framer Motion.
+- **Reviews & Ratings**: Customers can leave feedback and ratings on product pages.
+- **Order Management**: End-to-end tracking from 'Placed' to 'Delivered' with admin dispatch controls.
+- **Admin Bootstrapping**: Automated seeding script for setting up the initial admin account.
+
+## Demo
+
+**Admin Demo Credentials:**
+- Email: `admin@gmail.com`
+- Password: `admin123`
+
+## Screenshots
+
+### Storefront
+![Storefront](/frontend/apps/web/public/screenshots/storefront.png)
+
+### AI Shopping Assistant
+![AI Assistant](/frontend/apps/web/public/screenshots/ai.png)
+
+### Admin Panel
+![Admin Panel](/frontend/apps/web/public/screenshots/admin.png)
 
 ## Tech stack
 

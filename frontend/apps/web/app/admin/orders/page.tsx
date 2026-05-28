@@ -66,6 +66,8 @@ export default function AdminOrders() {
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [filter, setFilter] = useState<string>("all");
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const ordersRef = useRef<any[]>([]);
 
   useEffect(() => {
@@ -95,9 +97,10 @@ export default function AdminOrders() {
   const deliveredCount = orders.filter((o) => (o.status || "pending").toLowerCase() === "delivered").length;
   const totalVisibleValue = filteredOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
 
-  async function fetchOrders(options?: { silent?: boolean }) {
+  async function fetchOrders(options?: { silent?: boolean; forcePage?: number }) {
     try {
-      const res = await adminFetch("/api/orders");
+      const p = options?.forcePage ?? page;
+      const res = await adminFetch(`/api/orders?page=${p}&limit=20`);
       if (!res.ok) throw new Error("fetch failed");
       const data = await res.json();
       const nextOrders = Array.isArray(data) ? data : (data.orders || []);
@@ -108,6 +111,7 @@ export default function AdminOrders() {
       }
 
       setOrders(nextOrders);
+      if (data.totalPages) setTotalPages(data.totalPages);
       setHasLoadedOnce(true);
       setError(false);
     } catch {
@@ -222,7 +226,7 @@ export default function AdminOrders() {
       {loading ? (
         <div className="space-y-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="animate-pulse rounded-2xl border border-gray-100 bg-white p-5">
+            <div key={i} className="animate-pulse rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
               <div className="flex items-start justify-between mb-4">
                 <div className="space-y-2">
                   <div className="h-4 w-32 rounded-full bg-gray-100" />
@@ -231,8 +235,8 @@ export default function AdminOrders() {
                 </div>
                 <div className="h-6 w-20 rounded-full bg-gray-100" />
               </div>
-              <div className="h-16 rounded-lg bg-gray-50 mb-4" />
-              <div className="h-8 w-28 rounded-lg bg-gray-100" />
+              <div className="h-16 rounded-xl bg-gray-50 mb-4" />
+              <div className="h-10 w-32 rounded-xl bg-gray-100" />
             </div>
           ))}
         </div>
@@ -263,8 +267,8 @@ export default function AdminOrders() {
             const meta = getStatusMeta(order.status);
             const contactLinks = getContactLinks(order.phone);
             return (
-              <Card key={getOrderId(order)} className="shadow-none border border-gray-200 hover:border-gray-300 transition-colors">
-                <CardContent className="p-5">
+              <Card key={getOrderId(order)} className="shadow-sm hover:shadow-md border border-gray-200/60 hover:border-gray-300 transition-all rounded-2xl overflow-hidden">
+                <CardContent className="p-5 sm:p-6">
                   <div className="flex items-start justify-between gap-4 mb-4">
                     {/* Customer Info */}
                     <div>
@@ -276,16 +280,21 @@ export default function AdminOrders() {
                       <p className="text-xs text-gray-400 mt-0.5 truncate max-w-xs">📍 {order.address || "—"}</p>
                     </div>
                     {/* Status Badge */}
-                    <span className={`shrink-0 text-xs font-semibold px-3 py-1 rounded-full ${meta.color}`}>
+                    <span className={`shrink-0 text-xs font-bold px-3.5 py-1.5 rounded-full ring-1 ring-inset ${
+                      meta.color.includes('emerald') ? 'bg-emerald-50 text-emerald-700 ring-emerald-500/20' :
+                      meta.color.includes('amber') ? 'bg-amber-50 text-amber-700 ring-amber-500/20' :
+                      meta.color.includes('blue') ? 'bg-blue-50 text-blue-700 ring-blue-500/20' :
+                      meta.color.includes('red') ? 'bg-red-50 text-red-700 ring-red-500/20' : meta.color
+                    }`}>
                       {meta.label}
                     </span>
                   </div>
 
                   {contactLinks && (
-                    <div className="mb-4 flex flex-wrap gap-2">
+                    <div className="mb-5 flex flex-wrap gap-2">
                       <a
                         href={contactLinks.callHref}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100"
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50/50 px-3 py-2 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100"
                       >
                         <PhoneCall className="h-3.5 w-3.5" />
                         Call Customer
@@ -294,7 +303,7 @@ export default function AdminOrders() {
                         href={contactLinks.whatsappHref}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs font-bold text-green-700 transition-colors hover:bg-green-100"
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-green-200 bg-green-50/50 px-3 py-2 text-xs font-bold text-green-700 transition-colors hover:bg-green-100"
                       >
                         <MessageCircle className="h-3.5 w-3.5" />
                         Open WhatsApp
@@ -303,7 +312,7 @@ export default function AdminOrders() {
                   )}
 
                   {/* Items */}
-                  <div className="bg-gray-50 rounded-lg p-3 mb-4 space-y-1.5">
+                  <div className="bg-gray-50/80 rounded-xl p-4 mb-5 space-y-2 border border-gray-100">
                     {order.items?.map((item: any, i: number) => (
                       <div key={i} className="flex justify-between text-sm text-gray-700">
                         <span>{item.name}</span>
@@ -321,17 +330,49 @@ export default function AdminOrders() {
                     <button
                       disabled={updatingOrderId === getOrderId(order)}
                       onClick={() => updateStatus(getOrderId(order), meta.next)}
-                      className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white transition-all hover:bg-emerald-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 active:scale-95"
                     >
                       {updatingOrderId === getOrderId(order) ? "Updating..." : meta.nextLabel} <ChevronRight className="w-3.5 h-3.5" />
                     </button>
                   ) : (
-                    <span className="text-xs text-emerald-600 font-semibold">✓ Order complete</span>
+                    <span className="inline-flex items-center gap-1.5 text-xs text-emerald-600 font-bold bg-emerald-50 px-4 py-2 rounded-xl ring-1 ring-emerald-500/20">
+                      ✓ Order complete
+                    </span>
                   )}
                 </CardContent>
               </Card>
             );
           })}
+          
+          {totalPages > 1 && (
+            <div className="mt-8 flex justify-center gap-2">
+              <button
+                onClick={() => {
+                  const p = Math.max(1, page - 1);
+                  setPage(p);
+                  fetchOrders({ forcePage: p });
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                disabled={page === 1}
+                className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-semibold disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <span className="px-4 py-2 text-sm text-gray-600">Page {page} of {totalPages}</span>
+              <button
+                onClick={() => {
+                  const p = Math.min(totalPages, page + 1);
+                  setPage(p);
+                  fetchOrders({ forcePage: p });
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                disabled={page === totalPages}
+                className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-semibold disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

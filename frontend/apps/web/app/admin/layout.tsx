@@ -35,18 +35,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const SidebarContent = () => (
     <>
       {/* Logo */}
-      <div className="flex items-center gap-2.5 px-6 py-5 border-b border-gray-100">
-        <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center shrink-0">
+      <div className="flex items-center gap-2.5 px-6 py-5 border-b border-slate-800">
+        <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center shrink-0 shadow-lg shadow-emerald-500/20">
           <Store className="w-4 h-4 text-white" />
         </div>
         <div>
-          <p className="font-bold text-gray-900 leading-tight text-sm">Panchavati Mart</p>
-          <p className="text-[11px] text-gray-400 font-medium">Admin Panel</p>
+          <p className="font-bold text-slate-100 leading-tight text-sm">Panchavati Mart</p>
+          <p className="text-[11px] text-slate-400 font-medium tracking-wide uppercase">Admin Panel</p>
         </div>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-0.5">
+      <nav className="flex-1 px-3 py-4 space-y-1">
         {navLinks.map((link) => {
           const Icon = link.icon;
           const isActive = pathname === link.href;
@@ -55,13 +55,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               key={link.name}
               href={link.href}
               onClick={() => setMobileOpen(false)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                 isActive
-                  ? "bg-emerald-50 text-emerald-700"
-                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  ? "bg-emerald-500/10 text-emerald-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
+                  : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200"
               }`}
             >
-              <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-emerald-600" : "text-gray-400"}`} />
+              <Icon className={`w-4 h-4 shrink-0 transition-colors ${isActive ? "text-emerald-400" : "text-slate-500"}`} />
               {link.name}
             </Link>
           );
@@ -69,10 +69,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </nav>
 
       {/* Logout */}
-      <div className="px-3 py-4 border-t border-gray-100">
+      <div className="px-3 py-4 border-t border-slate-800">
         <button
           onClick={handleLogout}
-          className="flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors"
+          className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-colors"
         >
           <LogOut className="w-4 h-4 shrink-0" />
           Sign Out
@@ -85,7 +85,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="flex min-h-screen bg-gray-50 font-sans">
 
       {/* ── Desktop Sidebar ──────────────────────────────────────────── */}
-      <aside className="hidden lg:flex fixed inset-y-0 left-0 z-20 w-60 flex-col border-r border-gray-200 bg-white shadow-sm">
+      <aside className="hidden lg:flex fixed inset-y-0 left-0 z-20 w-64 flex-col border-r border-slate-800 bg-slate-900 shadow-xl">
         <SidebarContent />
       </aside>
 
@@ -111,18 +111,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <>
           {/* Backdrop */}
           <div
-            className="lg:hidden fixed inset-0 z-20 bg-black/30 backdrop-blur-sm"
+            className="lg:hidden fixed inset-0 z-20 bg-slate-900/60 backdrop-blur-sm transition-opacity"
             onClick={() => setMobileOpen(false)}
           />
           {/* Drawer */}
-          <aside className="lg:hidden fixed inset-y-0 left-0 z-30 flex w-72 flex-col border-r border-gray-200 bg-white shadow-xl">
+          <aside className="lg:hidden fixed inset-y-0 left-0 z-30 flex w-72 flex-col border-r border-slate-800 bg-slate-900 shadow-2xl">
             <SidebarContent />
           </aside>
         </>
       )}
 
       {/* ── Main Content ─────────────────────────────────────────────── */}
-      <main className="flex-1 min-w-0 lg:ml-60">
+      <main className="flex-1 min-w-0 lg:ml-64 bg-slate-50/50">
         {/* Offset for mobile top bar */}
         <div className="lg:hidden h-14" />
         <div className="px-4 py-6 sm:px-6 lg:px-8">

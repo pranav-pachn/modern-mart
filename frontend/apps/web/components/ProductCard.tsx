@@ -78,7 +78,7 @@ export default function ProductCard({
   };
 
   return (
-    <div className="group relative flex flex-col rounded-2xl border border-gray-100 bg-white shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden">
+    <div className="group relative flex flex-col rounded-2xl border border-gray-100/80 bg-white shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 overflow-hidden ring-1 ring-transparent hover:ring-emerald-500/10">
       {/* Image area — clickable → detail page */}
       <Link href={`/product/${productId}`} className="block relative aspect-square bg-gray-50 overflow-hidden">
         <img
@@ -158,10 +158,10 @@ export default function ProductCard({
             <button
               type="button"
               onClick={handleAddClick}
-              className={`flex w-full sm:w-auto h-10 sm:h-9 items-center justify-center gap-1.5 rounded-xl px-4 text-xs font-bold transition-all duration-200 ${
+              className={`flex w-full sm:w-auto h-10 sm:h-9 items-center justify-center gap-1.5 rounded-xl px-4 text-xs font-bold transition-all duration-300 ${
                 isAdded
-                  ? "bg-emerald-500 text-white scale-95"
-                  : "bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95 shadow-sm"
+                  ? "bg-emerald-500 text-white scale-[0.98]"
+                  : "bg-emerald-600 text-white hover:bg-emerald-500 active:scale-95 shadow-[0_4px_12px_rgba(16,185,129,0.2)] hover:shadow-[0_6px_16px_rgba(16,185,129,0.3)] hover:-translate-y-0.5"
               }`}
             >
               {isAdded ? (

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from "next/server";
 import { ObjectId, Int32 } from "mongodb";
 import { z } from "zod";

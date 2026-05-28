@@ -106,29 +106,30 @@ export default async function Home() {
       {/* ── 4. AI FEATURE ── */}
       <section className="lp-section">
         <div className="lp-section-inner">
-          <div className="lp-ai-card">
+          <div className="lp-ai-card border border-violet-200/50 shadow-[0_8px_40px_rgba(124,58,237,0.08)] bg-gradient-to-br from-violet-50/80 to-purple-50/40 backdrop-blur-xl">
             <div className="lp-ai-left">
-              <span className="lp-ai-spark">✨</span>
-              <p className="lp-section-label" style={{ color: "#7c3aed", marginBottom: "8px" }}>AI Grocery Generator</p>
+              <span className="lp-ai-spark drop-shadow-md">✨</span>
+              <p className="lp-section-label" style={{ color: "var(--violet)", marginBottom: "8px" }}>AI Grocery Generator</p>
               <h2 className="lp-section-title" style={{ marginBottom: "12px", fontSize: "clamp(22px,3vw,34px)" }}>
                 Tell us what you want to cook — we'll add everything to your cart
               </h2>
               <p className="lp-ai-sub">
                 Just type a dish like "dal tadka for 4" and our AI instantly adds all the ingredients you need. No more forgetting items!
               </p>
-              <Link href="/ai" className="lp-ai-btn">
+              <Link href="/ai" className="lp-ai-btn shadow-lg shadow-violet-500/25">
                 Try AI Grocery →
               </Link>
             </div>
-            <div className="lp-ai-right">
-              <div className="lp-ai-demo">
-                <div className="lp-ai-bubble">Make dal tadka for 4 people 🍲</div>
+            <div className="lp-ai-right relative">
+              <div className="absolute inset-0 bg-violet-400/20 blur-3xl -z-10 rounded-full scale-110"></div>
+              <div className="lp-ai-demo glass-panel">
+                <div className="lp-ai-bubble shadow-sm">Make dal tadka for 4 people 🍲</div>
                 <div className="lp-ai-tags">
                   {["Toor Dal", "Tomatoes", "Onion", "Garlic", "Ghee", "Turmeric", "Red Chilli"].map(t => (
-                    <span key={t} className="lp-ai-tag">{t}</span>
+                    <span key={t} className="lp-ai-tag shadow-sm">{t}</span>
                   ))}
                 </div>
-                <div className="lp-ai-added">✓ 7 items added to cart</div>
+                <div className="lp-ai-added shadow-sm border border-emerald-100">✓ 7 items added to cart</div>
               </div>
             </div>
           </div>

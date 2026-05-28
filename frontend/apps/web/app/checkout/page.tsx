@@ -22,7 +22,7 @@ import toast from "react-hot-toast";
 const ORDERS_API_URL = "/api/orders";
 const ADDRESS_API_URL = "/api/user/address";
 const MINIMUM_ORDER_VALUE = 200;
-const ONLINE_PAYMENTS_ENABLED = false; // Disabled for COD-only
+const ONLINE_PAYMENTS_ENABLED = true;
 const HAS_RAZORPAY_KEY = Boolean(process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID);
 
 const DELIVERY_SLOTS = ["Morning", "Afternoon", "Evening"] as const;
@@ -48,7 +48,7 @@ export default function CheckoutPage() {
   const { items, subtotal, deliveryFee, total, clearCart } = useCart();
   const [statusMessage, setStatusMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [paymentMethod] = useState("cod"); // COD only
+  const [paymentMethod, setPaymentMethod] = useState("cod");
   const [deliverySlot, setDeliverySlot] = useState<(typeof DELIVERY_SLOTS)[number]>("Morning");
 
   const [savedAddresses, setSavedAddresses] = useState<UserAddress[]>([]);
@@ -64,7 +64,7 @@ export default function CheckoutPage() {
 
   const isMinimumOrderMet = subtotal >= MINIMUM_ORDER_VALUE;
   const minimumOrderShortfall = Math.max(0, MINIMUM_ORDER_VALUE - subtotal);
-  const canUseOnlinePayment = false; // Always false for COD-only
+  const canUseOnlinePayment = ONLINE_PAYMENTS_ENABLED && HAS_RAZORPAY_KEY;
 
   useEffect(() => {
     if (session) {
@@ -101,15 +101,18 @@ export default function CheckoutPage() {
     setDeliveryDetails((prev) => ({ ...prev, address: addr.addressLine }));
   };
 
-  
-  const submitOrder = async (formData: FormData | null): Promise<string | null> => {
+  const submitOrder = async (
+    formData: FormData | null,
+    paymentStatus = "cod_pending",
+    razorpayPaymentId?: string
+  ): Promise<string | null> => {
     const userName = (formData?.get("name") as string) ?? deliveryDetails.userName;
     const phone = (formData?.get("phone") as string) ?? deliveryDetails.phone;
     const address = (formData?.get("address") as string) ?? deliveryDetails.address;
     const userId = session?.user && typeof session.user === "object" ? (session.user as { id?: string }).id : undefined;
     const userEmail = session?.user?.email ?? undefined;
 
-    const normalizedPaymentMethod = "COD"; // Always COD
+    const normalizedPaymentMethod = paymentMethod.toUpperCase();
 
     const payload = {
       userName,
@@ -127,6 +130,8 @@ export default function CheckoutPage() {
       })),
       total: Number(total),
       paymentMethod: normalizedPaymentMethod,
+      paymentStatus,
+      razorpayPaymentId,
       notes: deliveryDetails.notes.trim() || undefined,
     };
 
@@ -168,16 +173,68 @@ export default function CheckoutPage() {
     setIsSubmitting(true);
     setStatusMessage("");
 
-    const orderId = await submitOrder(formData);
-    if (!orderId) return;
+    if (paymentMethod === "online" && canUseOnlinePayment) {
+      try {
+        const rzpRes = await fetch("/api/payment/razorpay", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ amount: total }),
+        });
 
-    clearCart();
-    toast.success("Order placed successfully! 🎉");
-    router.push(`/order-success?orderId=${encodeURIComponent(orderId)}`);
+        if (!rzpRes.ok) {
+          throw new Error("Failed to initialize payment gateway");
+        }
+
+        const rzpOrder = await rzpRes.json();
+
+        const options = {
+          key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+          amount: rzpOrder.amount,
+          currency: rzpOrder.currency,
+          name: "Modern Mart",
+          description: "Grocery Order",
+          order_id: rzpOrder.id,
+          handler: async function (response: any) {
+            const orderId = await submitOrder(formData, "paid", response.razorpay_payment_id);
+            if (orderId) {
+              clearCart();
+              toast.success("Payment successful! 🎉");
+              router.push(`/order-success?orderId=${encodeURIComponent(orderId)}`);
+            }
+          },
+          prefill: {
+            name: deliveryDetails.userName,
+            contact: deliveryDetails.phone,
+            email: session?.user?.email || "",
+          },
+          theme: {
+            color: "#059669",
+          },
+        };
+
+        const razorpay = new (window as any).Razorpay(options);
+        razorpay.on("payment.failed", function (response: any) {
+          setIsSubmitting(false);
+          setStatusMessage(response.error.description || "Payment failed. Please try again.");
+        });
+        razorpay.open();
+      } catch (error) {
+        setIsSubmitting(false);
+        setStatusMessage(error instanceof Error ? error.message : "Payment initialization failed.");
+      }
+    } else {
+      const orderId = await submitOrder(formData, "cod_pending");
+      if (!orderId) return;
+
+      clearCart();
+      toast.success("Order placed successfully! 🎉");
+      router.push(`/order-success?orderId=${encodeURIComponent(orderId)}`);
+    }
   };
 
   return (
     <>
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" />
       <main className="min-h-screen bg-zinc-50 px-4 py-8 sm:px-6 sm:py-10 dark:bg-zinc-950">
         <div className="mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[1.4fr_1fr]">
 
@@ -340,19 +397,63 @@ export default function CheckoutPage() {
                 </p>
               </div>
 
-              {/* Payment method - COD only */}
-              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/20">
-                <div className="flex items-center gap-3">
-                  <div className="h-4 w-4 rounded-full border-2 border-emerald-600 bg-emerald-600"></div>
-                  <div>
-                    <p className="font-semibold text-emerald-900 dark:text-emerald-100 text-sm">Cash on Delivery</p>
-                    <p className="text-xs text-emerald-700 dark:text-emerald-300">Pay when order arrives</p>
-                  </div>
+              {/* Payment method */}
+              <fieldset>
+                <legend className="mb-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+                  Payment Method
+                </legend>
+                <div className="space-y-3">
+                  <label
+                    className={`flex cursor-pointer items-center gap-3 rounded-xl border-2 p-4 transition-all ${
+                      paymentMethod === "cod"
+                        ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20"
+                        : "border-zinc-200 bg-white hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="cod"
+                      checked={paymentMethod === "cod"}
+                      onChange={(e) => setPaymentMethod(e.target.value)}
+                      className="sr-only"
+                    />
+                    <div className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${paymentMethod === "cod" ? "border-emerald-600" : "border-zinc-300"}`}>
+                      {paymentMethod === "cod" && <div className="h-2.5 w-2.5 rounded-full bg-emerald-600" />}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Cash on Delivery</p>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400">Pay when you receive your order.</p>
+                    </div>
+                  </label>
+
+                  {canUseOnlinePayment && (
+                    <label
+                      className={`flex cursor-pointer items-center gap-3 rounded-xl border-2 p-4 transition-all ${
+                        paymentMethod === "online"
+                          ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20"
+                          : "border-zinc-200 bg-white hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value="online"
+                        checked={paymentMethod === "online"}
+                        onChange={(e) => setPaymentMethod(e.target.value)}
+                        className="sr-only"
+                      />
+                      <div className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${paymentMethod === "online" ? "border-emerald-600" : "border-zinc-300"}`}>
+                        {paymentMethod === "online" && <div className="h-2.5 w-2.5 rounded-full bg-emerald-600" />}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Pay Online (Razorpay Test)</p>
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400">Secure payment via UPI, Cards, NetBanking.</p>
+                      </div>
+                    </label>
+                  )}
                 </div>
-                <p className="mt-2 text-xs text-emerald-600 dark:text-emerald-400">
-                  Simple and secure - pay only when you receive your order.
-                </p>
-              </div>
+              </fieldset>
 
               {/* Delivery slot */}
               <fieldset>
