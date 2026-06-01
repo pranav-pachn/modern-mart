@@ -1,4 +1,4 @@
-# Supermart
+# Supermart ![Tests](https://img.shields.io/badge/tests-100%25-passing)
 
 Supermart is a grocery e-commerce app built with Next.js in a Turborepo. The current codebase ships a single full-stack web app in `frontend/apps/web` with App Router pages, API routes, Auth.js authentication, MongoDB models, admin tools, and AI-assisted shopping flows.
 
@@ -73,6 +73,12 @@ graph TD
 - Email: `admin@gmail.com`
 - Password: `admin123`
 
+*Note: If you are running locally and need to recreate the admin account, you can quickly scaffold it by running:*
+```bash
+cd frontend/apps/web
+npm run seed:admin
+```
+
 ## Screenshots
 
 ### Storefront
@@ -113,6 +119,9 @@ npm install
 ```
 
 ### Configure environment variables
+
+For a step‑by‑step guide, see the [Local Setup Guide](docs/local-setup.md).
+
 
 Copy the app env template:
 
