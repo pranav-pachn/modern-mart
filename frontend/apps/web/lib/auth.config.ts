@@ -77,14 +77,19 @@ export const authConfig: NextAuthConfig = {
       const { pathname } = nextUrl;
       const isAuthPage = pathname === "/login" || pathname === "/register";
 
-      if (isLoggedIn && isAuthPage) {
-        return NextResponse.redirect(new URL(isAdmin ? "/admin" : "/shop", nextUrl));
+      if (isAuthPage) {
+        if (isLoggedIn) {
+          return NextResponse.redirect(new URL(isAdmin ? "/admin" : "/shop", nextUrl));
+        }
+        return true; // Allow access to login/register if not logged in
       }
 
-      // Not logged in → redirect to /login with callback
+      // Not logged in and not on auth page → redirect to /login with callback
       if (!isLoggedIn) {
         const loginUrl = new URL("/login", nextUrl);
-        loginUrl.searchParams.set("callbackUrl", pathname);
+        if (pathname !== "/") {
+          loginUrl.searchParams.set("callbackUrl", pathname);
+        }
         return NextResponse.redirect(loginUrl);
       }
 
