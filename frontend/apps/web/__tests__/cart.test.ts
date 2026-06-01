@@ -20,8 +20,8 @@ describe('Cart Store', () => {
     useCart.getState().addToCart(mockProduct);
     const state = useCart.getState();
     expect(state.items.length).toBe(1);
-    expect(state.items[0].id).toBe('p1');
-    expect(state.items[0].quantity).toBe(1);
+    expect(state.items[0]?.id).toBe('p1');
+    expect(state.items[0]?.quantity).toBe(1);
     expect(state.subtotal).toBe(100);
     expect(state.deliveryFee).toBe(30);
     expect(state.total).toBe(130);
@@ -32,7 +32,7 @@ describe('Cart Store', () => {
     useCart.getState().addToCart(mockProduct);
     const state = useCart.getState();
     expect(state.items.length).toBe(1);
-    expect(state.items[0].quantity).toBe(2);
+    expect(state.items[0]?.quantity).toBe(2);
     expect(state.subtotal).toBe(200);
   });
 
@@ -41,7 +41,7 @@ describe('Cart Store', () => {
     useCart.getState().addToCart(lowStockProduct);
     useCart.getState().addToCart(lowStockProduct); // Should not increase
     const state = useCart.getState();
-    expect(state.items[0].quantity).toBe(1);
+    expect(state.items[0]?.quantity).toBe(1);
   });
 
   it('decreases quantity and removes item when quantity is 0', () => {
@@ -49,7 +49,7 @@ describe('Cart Store', () => {
     useCart.getState().addToCart(mockProduct);
     
     useCart.getState().decreaseQuantity('p1');
-    expect(useCart.getState().items[0].quantity).toBe(1);
+    expect(useCart.getState().items[0]?.quantity).toBe(1);
 
     useCart.getState().decreaseQuantity('p1');
     expect(useCart.getState().items.length).toBe(0);
