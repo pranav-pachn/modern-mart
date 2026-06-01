@@ -23,7 +23,7 @@ export default async function Home() {
           <p className="lp-subtitle">
             Fresh groceries delivered to your doorstep — right here in Bodhan.
           </p>
-          <Link href="/shop" className="lp-cta-btn">
+          <Link href="/login" className="lp-cta-btn">
             Start Shopping →
           </Link>
         </div>
@@ -51,7 +51,7 @@ export default async function Home() {
               { icon: "🌾", name: "Staples", desc: "Rice, dal, flour & oils" },
               { icon: "🧹", name: "Household", desc: "Cleaning & daily essentials" },
             ].map((cat) => (
-              <Link href="/shop" key={cat.name} className="lp-cat-card">
+              <Link href="/login" key={cat.name} className="lp-cat-card">
                 <span className="lp-cat-icon">{cat.icon}</span>
                 <div>
                   <div className="lp-cat-name">{cat.name}</div>
@@ -79,7 +79,7 @@ export default async function Home() {
                 <li>✅ Real-time order tracking</li>
                 <li>✅ Minimum order amount: Rs. 200</li>
               </ul>
-              <Link href="/shop" className="lp-cta-btn" style={{ marginTop: "24px", display: "inline-flex" }}>
+              <Link href="/login" className="lp-cta-btn" style={{ marginTop: "24px", display: "inline-flex" }}>
                 Order Now
               </Link>
             </div>
@@ -116,7 +116,7 @@ export default async function Home() {
               <p className="lp-ai-sub">
                 Just type a dish like "dal tadka for 4" and our AI instantly adds all the ingredients you need. No more forgetting items!
               </p>
-              <Link href="/ai" className="lp-ai-btn shadow-lg shadow-violet-500/25">
+              <Link href="/login" className="lp-ai-btn shadow-lg shadow-violet-500/25">
                 Try AI Grocery →
               </Link>
             </div>
@@ -164,7 +164,7 @@ export default async function Home() {
         <div className="lp-fca-inner">
           <h2 className="lp-fca-title">Ready to order?</h2>
           <p className="lp-fca-sub">Join hundreds of families in Bodhan who order from Panchavati Mega Mart every week.</p>
-          <Link href="/shop" className="lp-cta-btn lp-cta-white">
+          <Link href="/login" className="lp-cta-btn lp-cta-white">
             Browse Products →
           </Link>
         </div>
