@@ -1,35 +1,29 @@
-# Supermart ![Tests](https://img.shields.io/badge/tests-100%25-passing)
+# ModernMart 🛒
+### Next-Gen AI-Assisted Grocery E-Commerce Platform
 
-Supermart is a grocery e-commerce app built with Next.js in a Turborepo. The current codebase ships a single full-stack web app in `frontend/apps/web` with App Router pages, API routes, Auth.js authentication, MongoDB models, admin tools, and AI-assisted shopping flows.
+[![Tests](https://img.shields.io/badge/tests-passing-brightgreen)](#)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19-blue)](https://react.dev/)
+[![Turborepo](https://img.shields.io/badge/Turborepo-2-ef4444)](https://turbo.build/)
 
-## What is in this repo
+**ModernMart** is a sophisticated e-commerce solution that leverages Artificial Intelligence to revolutionize the grocery shopping experience. Built with a focus on performance, scalability, and type safety, it demonstrates modern full-stack engineering patterns using the Next.js 16 App Router and React 19.
 
+[Demo](#demo) | [Screenshots](#screenshots) | [Tech Stack](#tech-stack) | [Engineering Highlights](#engineering-highlights)
 
+---
 
-```text
-supermart/
-├── README.md
-├── docs/
-├── frontend/
-│   ├── apps/
-│   │   └── web/              # Next.js app
-│   │       ├── app/          # Pages and API routes
-│   │       ├── components/   # UI components
-│   │       ├── context/      # React context
-│   │       ├── lib/          # Auth, MongoDB, helpers
-│   │       ├── models/       # MongoDB models
-│   │       ├── scripts/      # Utility scripts like admin seeding
-│   │       └── store/        # Client state
-│   ├── packages/
-│   │   ├── eslint-config/
-│   │   ├── typescript-config/
-│   │   └── ui/
-│   ├── package.json
-│   └── turbo.json
-└── package.json
-```
+## 🚀 Engineering Highlights
 
-## Architecture
+- **Multi-Provider AI Resilience:** Implements a dynamic failover strategy for AI services. If the primary provider (OpenRouter) is unavailable, the system automatically rotates through Groq, ensuring the AI Shopping Assistant remains functional.
+- **End-to-End Type Safety:** Leverages TypeScript across the entire monorepo, including shared packages and API contracts, minimizing runtime errors and improving developer velocity.
+- **Modern React Architecture:** Utilizes React 19 and Next.js 16 features, including React Server Components (RSC) for optimized data fetching and improved performance.
+- **Scalable Monorepo Design:** Managed with Turborepo to enable efficient builds, shared UI components, and standardized configurations across the workspace.
+- **Robust Security:** Implements Role-Based Access Control (RBAC) via Auth.js (NextAuth v5), protecting sensitive admin routes and user data.
+- **Comprehensive Testing:** Unit and integration testing with Vitest and E2E testing with Playwright, ensuring critical paths like "Add to Cart" and "Order Flow" are reliable.
+
+---
+
+## 🏗️ Architecture
 
 ```mermaid
 graph TD
@@ -54,32 +48,48 @@ graph TD
     AIAPI -.->|Fallback| Groq[Groq API]
 ```
 
+---
 
-## Features
+## ✨ Features
 
-- **Customer storefront**: Product browsing, detailed product pages, cart management, checkout (COD and Online via Razorpay), and order history tracking.
-- **Admin Dashboard**: Manage products, orders, and view daily sales statistics with role-based access.
-- **Authentication**: Auth.js sign-in flow with protected routes (admin vs customer).
-- **Database**: MongoDB integration for users, products, reviews, orders, and AI history.
-- **AI-Powered Shopping Assistant**: Generate grocery lists and find product matches seamlessly using LLMs.
-- **Interactive UI**: Micro-animations, responsive design, and intuitive user experiences built with Tailwind CSS and Framer Motion.
-- **Reviews & Ratings**: Customers can leave feedback and ratings on product pages.
-- **Order Management**: End-to-end tracking from 'Placed' to 'Delivered' with admin dispatch controls.
-- **Admin Bootstrapping**: Automated seeding script for setting up the initial admin account.
+### 🛒 Customer Experience
+- **AI-Powered Shopping Assistant:** Generate instant grocery lists from natural language prompts (e.g., "Ingredients for Butter Chicken for 4 people").
+- **Smart Product Discovery:** Seamlessly browse categorized products with real-time search and filtering.
+- **Unified Checkout:** Secure payment flow supporting both Cash on Delivery (COD) and online payments.
+- **Interactive UI:** Micro-animations and responsive design built with Tailwind CSS 4 and Framer Motion.
+- **Engagement:** Product reviews and ratings system to drive social proof and customer feedback.
 
-## Demo
+### 🛡️ Admin Management
+- **Centralized Dashboard:** Real-time visibility into daily sales, order volume, and revenue metrics.
+- **Inventory Control:** Full CRUD operations for product management with image upload capabilities.
+- **Order Fulfillment:** Streamlined order tracking system from placement to 'Delivered' status.
 
-**Admin Demo Credentials:**
-- Email: `admin@gmail.com`
-- Password: `admin123`
+---
 
-*Note: If you are running locally and need to recreate the admin account, you can quickly scaffold it by running:*
-```bash
-cd frontend/apps/web
-npm run seed:admin
-```
+## 🛠️ Tech Stack
 
-## Screenshots
+### Frontend & Core
+- **Next.js 16:** App Router, Server Actions, and Turbopack.
+- **React 19:** Functional components with Hooks and Server Components.
+- **Tailwind CSS 4:** Utility-first styling with modern CSS features.
+- **Zustand:** Lightweight state management for cart and UI state.
+- **Framer Motion:** High-performance animations for a polished UX.
+
+### Backend & AI
+- **Node.js:** Server-side logic within Next.js API Routes.
+- **MongoDB:** Scalable NoSQL database with Mongoose ODM.
+- **Auth.js (v5):** Secure, flexible authentication and session management.
+- **LLM Integration:** Llama 3.1 via OpenRouter and Groq for intelligent processing.
+
+### Tooling & DevOps
+- **Turborepo:** Optimized monorepo orchestration.
+- **Vitest & Playwright:** Modern testing stack for unit and E2E coverage.
+- **Zod:** Schema validation for API requests and environment variables.
+- **ESLint & Prettier:** Standardized code quality and formatting.
+
+---
+
+## 📸 Screenshots
 
 ### Storefront
 ![Storefront](/frontend/apps/web/public/screenshots/storefront.png)
@@ -90,139 +100,62 @@ npm run seed:admin
 ### Admin Panel
 ![Admin Panel](/frontend/apps/web/public/screenshots/admin.png)
 
-## Tech stack
+---
 
-- Next.js 16
-- React 19
-- TypeScript
-- Turborepo
-- MongoDB
-- Auth.js / NextAuth v5 beta
-- Tailwind CSS v4
-- Zustand
-
-## Getting started
+## 🚦 Getting Started
 
 ### Prerequisites
-
 - Node.js 20+
 - npm 10+
-- A MongoDB database
+- A MongoDB database (Local or Atlas)
 
-### Install dependencies
-
+### 1. Install Dependencies
 From the repo root:
-
 ```bash
 cd frontend
 npm install
 ```
 
-### Configure environment variables
-
-For a step‑by‑step guide, see the [Local Setup Guide](docs/local-setup.md).
-
-
-Copy the app env template:
-
+### 2. Environment Configuration
+Copy the template in `frontend/apps/web`:
 ```bash
-cd frontend/apps/web
-Copy-Item .env.example .env.local
+cd apps/web
+cp .env.example .env.local
 ```
+Minimum required: `MONGODB_URI`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`.
 
-Minimum required variables for local development:
-
-```env
-MONGODB_URI=your_mongodb_connection_string
-NEXTAUTH_SECRET=your_random_secret
-NEXTAUTH_URL=http://localhost:3000
-```
-
-Optional variables:
-
-- `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` for Google login
-- `OPENROUTER_API_KEY` or `GROQ_API_KEY` for AI features
-- `NEXT_PUBLIC_RAZORPAY_KEY_ID` for payment UI integration
-- `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and `ADMIN_NAME` for admin seeding
-
-## Run locally
-
-Start the web app from the frontend workspace:
-
+### 3. Run Locally
 ```bash
-cd frontend
+# From frontend directory
 npm run dev
 ```
-
 The app runs on `http://localhost:3000`.
 
-If you only want to run the app package directly:
-
-```bash
-cd frontend/apps/web
-npm run dev
-```
-
-## Useful scripts
-
-From `frontend/`:
-
-- `npm run dev` - run the Turborepo dev task
-- `npm run build` - build all workspaces
-- `npm run lint` - run lint tasks
-- `npm run typecheck` - run TypeScript checks
-- `npm run format` - run formatting tasks
-
-From `frontend/apps/web/`:
-
-- `npm run dev` - start Next.js with Turbopack
-- `npm run build` - production build
-- `npm run start` - start the production server
-- `npm run lint` - run ESLint
-- `npm run typecheck` - run TypeScript with no emit
-- `npm run seed:admin` - create or update an admin user
-
-## Admin bootstrap
-
+### 4. Admin Bootstrap
 To create the first admin account:
-
 ```bash
-cd frontend/apps/web
+cd apps/web
 npm run seed:admin
 ```
+*Credentials: admin@gmail.com / admin123*
 
-Defaults used by the script if you do not set env vars:
+---
 
-- Email: `admin@gmail.com`
-- Password: `admin123`
-- Name: `Admin`
+## 🧪 Testing
+```bash
+# Run all tests via Turbo
+npm run test
 
-Change these with `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and `ADMIN_NAME` in `.env.local`.
+# Run specific app tests
+cd frontend/apps/web
+npm run test           # Vitest
+npm run test:e2e       # Playwright
+```
 
-## API surface
+---
 
-The app exposes API routes under `frontend/apps/web/app/api`.
-
-Main route groups:
-
-- `/api/auth` for login and registration
-- `/api/products` for catalog, categories, details, and reviews
-- `/api/orders` for order creation, lookup, analytics, and status updates
-- `/api/user` for addresses and user order data
-- `/api/admin/stats` for admin dashboard metrics
-- `/api/ai` for AI generation, history, and product matching
-- `/api/health/db` for database connectivity checks
-
-## Deployment
-
-Deploy the Next.js app as a single Vercel project with:
-
+## 🌐 Deployment
+Deploy the Next.js app to Vercel:
 - Root directory: `frontend/apps/web`
 - Node version: 20+
-- Environment variables from `frontend/apps/web/.env.example`
-
-Important note: The current codebase uses the single Next.js app under `frontend/apps/web`. Use the app-level env template at `frontend/apps/web/.env.example` for environment variables.
-
-## Notes
-
-- Use `frontend/apps/web/.env.example` as the environment template for the current app.
+- Environment variables: See `.env.example`
